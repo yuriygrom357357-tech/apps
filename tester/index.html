@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ТЕСТЕР — голосовий тестер ігор</title>
+<meta name="theme-color" content="#1a1206">
+<meta name="description" content="Слухає ваші коментарі під час гри і робить з них готовий промпт для Claude у Word">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ТЕСТЕР">
+<style>
+:root{
+  --gold:linear-gradient(100deg,#7a4e0c 0%,#f9e08b 16%,#fffbe6 24%,#d9a531 34%,#8f620f 48%,#f6d77a 62%,#fffdf0 70%,#c8921f 84%,#7a4e0c 100%);
+  --gold-flat:#e7bd4f; --ink:#0b1d33; --bg:#0c0904; --muted:#cdb98a;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:#f6ecd0;font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+body{min-height:100vh;background:
+  radial-gradient(900px 500px at 50% -120px,rgba(255,200,80,.28),transparent 70%),
+  radial-gradient(600px 400px at 100% 100%,rgba(140,90,20,.18),transparent 70%),var(--bg);
+  padding-bottom:calc(30px + env(safe-area-inset-bottom))}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:640px;margin:0 auto;padding:0 14px}
+
+/* ===== ЗОЛОТО ===== */
+@keyframes shimmer{to{background-position:-250% 0}}
+@keyframes sweep{0%{transform:translateX(-160%) skewX(-20deg)}55%,100%{transform:translateX(260%) skewX(-20deg)}}
+@keyframes twinkle{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1) rotate(45deg)}}
+.gold-text{background:linear-gradient(100deg,#d9a531 0%,#fff3b8 20%,#fffdf0 28%,#f0c75a 40%,#c8921f 52%,#ffe9a0 66%,#fffdf0 74%,#e7bd4f 88%,#d9a531 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 5s linear infinite}
+header.plate{position:sticky;top:0;z-index:20;margin:0 -14px 14px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+  background:var(--gold);background-size:250% 100%;animation:shimmer 9s linear infinite;
+  box-shadow:0 4px 18px rgba(0,0,0,.7),inset 0 -2px 0 #6b440a,inset 0 2px 0 #fff6cf;overflow:hidden;display:flex;align-items:center;gap:10px}
+header.plate::after{content:"";position:absolute;top:0;bottom:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:sweep 4.5s ease-in-out infinite}
+.logo{flex:1;font-weight:900;font-size:28px;letter-spacing:.18em;color:#3b2605;text-shadow:0 1px 0 #fff3c4,0 -1px 0 #7a4e0c;position:relative;z-index:1}
+.logo small{display:block;font-size:10px;letter-spacing:.12em;font-weight:700;color:#5a3a07;text-shadow:none;margin-top:-3px}
+.hbtn{position:relative;z-index:1;width:44px;height:44px;border-radius:50%;border:2px solid #6b440a;background:radial-gradient(circle at 35% 30%,#fffbe6,#e9c25a 55%,#8f620f);color:#3b2605;font-weight:900;font-size:20px;box-shadow:0 2px 6px rgba(0,0,0,.5),inset 0 1px 2px #fff}
+
+.panel{position:relative;border:2px solid transparent;border-radius:20px;padding:16px;margin:14px 0;
+  background:linear-gradient(160deg,#1b150b,#0f0b05) padding-box,linear-gradient(135deg,#fff1b8,#c8921f,#5e400c,#f6d77a,#9c6b14) border-box;
+  box-shadow:0 10px 30px rgba(0,0,0,.55),0 0 18px rgba(230,180,60,.12)}
+.panel h2{margin:0 0 6px;font-size:15px;letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.panel h2 .num{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;font-size:13px;color:#3b2605;background:radial-gradient(circle at 35% 30%,#fffbe6,#e7bd4f 60%,#8f620f);flex:none}
+.hint{color:var(--muted);font-size:14px;margin:0 0 10px}
+.how{margin-left:auto;border:1px solid #8f620f;background:transparent;color:#f3d77e;border-radius:999px;padding:4px 10px;font-size:12px;letter-spacing:.04em;text-transform:none}
+.howto{display:none;background:rgba(255,215,110,.07);border:1px dashed #8f620f;border-radius:14px;padding:10px 12px 10px 30px;margin:6px 0 12px;font-size:14px;color:#efe0b8}
+.howto.open{display:block}
+.howto li{margin:4px 0}
+textarea{width:100%;min-height:150px;resize:vertical;border-radius:14px;border:1px solid #6b4a12;background:#0a0703;color:#fff6dc;padding:12px;font:15px/1.5 ui-monospace,Menlo,Consolas,monospace;outline:none}
+textarea:focus{border-color:#f3d77e;box-shadow:0 0 0 3px rgba(243,215,126,.25)}
+input,select{width:100%;border-radius:12px;border:1px solid #6b4a12;background:#0a0703;color:#fff6dc;padding:12px;font:inherit}
+label.f{display:block;margin:12px 0 4px;font-weight:700;color:#f3d77e}
+.small{font-size:13px;color:var(--muted)}
+
+/* ===== ДІАМАНТОВІ КНОПКИ ===== */
+.gem{position:relative;overflow:hidden;width:100%;border:none;border-radius:18px;padding:17px 16px;margin-top:10px;
+  font-weight:900;font-size:16px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);
+  background:linear-gradient(135deg,rgba(255,255,255,.95) 0%,rgba(255,255,255,0) 42%),
+    conic-gradient(from 200deg,#f4fdff,#9ad9ff,#ffffff,#c4ecff,#7cc8ff,#ffffff,#b3e5ff,#e9fbff,#8fd3ff,#f4fdff);
+  box-shadow:0 0 0 3px #e2b649,0 0 0 5px #6b440a,0 0 0 6px #ffe7a1,0 10px 24px rgba(0,0,0,.6),0 0 26px rgba(150,215,255,.45),inset 0 2px 6px #fff,inset 0 -8px 14px rgba(40,120,200,.35);
+  transition:transform .08s, filter .2s}
+.gem::after{content:"";position:absolute;top:-10%;bottom:-10%;width:22%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);animation:sweep 3.6s ease-in-out infinite;pointer-events:none}
+.gem{text-shadow:0 1px 0 rgba(255,255,255,.8)}
+.gem:active{transform:scale(.97)}
+.gem:disabled{filter:grayscale(.85) brightness(.55);cursor:not-allowed}
+.gem:disabled::after{display:none}
+.gem .sp{position:absolute;color:#fff;font-size:14px;animation:twinkle 2.2s infinite;pointer-events:none;text-shadow:0 0 6px #fff}
+.row{display:flex;gap:12px}.row>*{flex:1}
+.gem.emerald{background:linear-gradient(135deg,rgba(255,255,255,.9) 0%,rgba(255,255,255,0) 42%),conic-gradient(from 200deg,#eafff3,#69e0a6,#ffffff,#a7f3cc,#3fcf8e,#ffffff,#8ef0be,#e3fff0,#5bd99d,#eafff3);box-shadow:0 0 0 3px #e2b649,0 0 0 5px #6b440a,0 0 0 6px #ffe7a1,0 10px 24px rgba(0,0,0,.6),0 0 26px rgba(90,230,160,.4),inset 0 2px 6px #fff,inset 0 -8px 14px rgba(20,140,80,.35);color:#062a18}
+.gem.amethyst{background:linear-gradient(135deg,rgba(255,255,255,.9) 0%,rgba(255,255,255,0) 42%),conic-gradient(from 200deg,#f7efff,#c79cff,#ffffff,#e0c9ff,#ae7bff,#ffffff,#d5b6ff,#f4ebff,#bb8dff,#f7efff);box-shadow:0 0 0 3px #e2b649,0 0 0 5px #6b440a,0 0 0 6px #ffe7a1,0 10px 24px rgba(0,0,0,.6),0 0 26px rgba(190,140,255,.4),inset 0 2px 6px #fff,inset 0 -8px 14px rgba(110,50,200,.35);color:#25093f}
+.gem.flat{font-size:13px;padding:12px 10px}
+
+/* ===== ГОЛОВНИЙ БРИЛЬЯНТ ===== */
+.stage{display:flex;flex-direction:column;align-items:center;padding:6px 0 4px}
+.bezel{position:relative;width:230px;height:230px;border-radius:50%;padding:12px;
+  background:conic-gradient(from 0deg,#fff6cf,#c8921f,#6b440a,#f6d77a,#fffbe6,#9c6b14,#e7bd4f,#fff6cf);
+  box-shadow:0 14px 40px rgba(0,0,0,.7),0 0 40px rgba(240,190,70,.35),inset 0 0 6px rgba(0,0,0,.6)}
+@keyframes pulseGold{0%,100%{box-shadow:0 14px 40px rgba(0,0,0,.7),0 0 30px rgba(240,190,70,.35)}50%{box-shadow:0 14px 40px rgba(0,0,0,.7),0 0 70px rgba(255,215,100,.85)}}
+.bezel{animation:pulseGold 2.6s ease-in-out infinite}
+.brilliant{position:relative;width:100%;height:100%;border-radius:50%;border:none;overflow:hidden;
+  background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.95) 0 6%,transparent 22%),
+    radial-gradient(circle,#f8fdff 0 34%,transparent 35%),
+    repeating-conic-gradient(from 11deg,#e9f9ff 0 11.25deg,#86c9ff 11.25deg 22.5deg);
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.7),inset 0 -14px 30px rgba(30,100,180,.45);display:grid;place-items:center;color:var(--ink)}
+.brilliant::after{content:"";position:absolute;inset:-20%;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.9) 50%,transparent 60%);animation:sweep 3.6s ease-in-out infinite}
+.brilliant .lbl{position:relative;z-index:1;font-weight:900;font-size:30px;letter-spacing:.12em;background:radial-gradient(closest-side,rgba(255,255,255,.92) 60%,rgba(255,255,255,0));padding:14px 22px;border-radius:50%}
+.live .brilliant .lbl{background:radial-gradient(closest-side,rgba(255,236,240,.95) 60%,rgba(255,236,240,0))}
+.brilliant .sub{display:block;font-size:11px;letter-spacing:.06em;font-weight:800;margin-top:2px;opacity:.85}
+.brilliant .ico{display:block;font-size:30px;line-height:1}
+/* запис — рубін */
+@keyframes pulseRuby{0%,100%{box-shadow:0 14px 40px rgba(0,0,0,.7),0 0 30px rgba(255,40,80,.5)}50%{box-shadow:0 14px 40px rgba(0,0,0,.7),0 0 90px rgba(255,60,100,1)}}
+.live .bezel{animation:pulseRuby 1.1s ease-in-out infinite}
+.live .brilliant{background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.9) 0 6%,transparent 22%),radial-gradient(circle,#ffe3e8 0 34%,transparent 35%),repeating-conic-gradient(from 11deg,#ff9fb0 0 11.25deg,#c40f33 11.25deg 22.5deg);color:#4a0010}
+.status{margin-top:14px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;font-size:14px}
+.status .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#777;margin-right:6px;vertical-align:1px}
+.live .status .dot{background:#ff3b5c;box-shadow:0 0 10px #ff3b5c;animation:twinkle 1s infinite}
+.interim{min-height:24px;margin-top:6px;font-style:italic;color:#ffd9a0;text-align:center;font-size:15px}
+.stats{display:flex;gap:10px;justify-content:center;margin-top:6px;font-size:13px;color:var(--muted)}
+.stats b{color:#f3d77e}
+
+/* кроки */
+.steps{display:flex;justify-content:space-between;gap:6px;margin:4px 0 0}
+.steps div{flex:1;text-align:center;font-size:11px;color:#8d7a52;letter-spacing:.04em}
+.steps i{display:block;margin:0 auto 4px;width:16px;height:16px;transform:rotate(45deg);border-radius:3px;background:#3a2c12;border:1px solid #6b4a12}
+.steps .on{color:#f3d77e}.steps .on i{background:conic-gradient(#fff,#9ad9ff,#fff,#c4ecff,#fff);border-color:#ffe7a1;box-shadow:0 0 10px rgba(160,220,255,.9)}
+
+.hidden{display:none!important}
+.note{font-size:13px;color:#ffcf8a;background:rgba(255,160,60,.08);border:1px solid rgba(255,160,60,.35);border-radius:12px;padding:8px 10px;margin-top:10px}
+.linkbtn{background:none;border:none;color:#f3d77e;text-decoration:underline;padding:6px;font-size:14px}
+.center{text-align:center}
+
+/* модалки */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center;padding:12px;backdrop-filter:blur(3px)}
+.modal .card{width:100%;max-width:560px;max-height:88vh;overflow:auto;margin-bottom:env(safe-area-inset-bottom)}
+.modal .card h3{margin:0 0 8px;font-size:20px;letter-spacing:.08em}
+.x{position:absolute;right:10px;top:10px;width:36px;height:36px;border-radius:50%;border:1px solid #8f620f;background:#1b150b;color:#f3d77e;font-size:18px}
+.tabs{display:flex;gap:8px;margin:8px 0}
+.tabs button{flex:1;padding:10px;border-radius:12px;border:1px solid #8f620f;background:#140f07;color:#f3d77e;font-weight:800}
+.tabs button.act{background:var(--gold);color:#3b2605}
+.slide{min-height:210px}
+.slide .big{font-size:46px;text-align:center;margin:4px 0}
+.dots{display:flex;justify-content:center;gap:6px;margin:10px 0}
+.dots span{width:8px;height:8px;border-radius:50%;background:#4a3a1a}.dots span.on{background:#f3d77e}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;background:var(--gold);color:#3b2605;font-weight:800;padding:12px 18px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.6);opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){*,*::after{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header class="plate">
+    <div class="logo">ТЕСТЕР<small>ГОЛОС → ПРОМПТ ДЛЯ CLAUDE</small></div>
+    <button class="hbtn" id="btnInstall" title="Встановити на телефон" aria-label="Встановити на телефон">⤓</button>
+    <button class="hbtn" id="btnSettings" title="Налаштування" aria-label="Налаштування">⚙</button>
+    <button class="hbtn" id="btnHelp" title="Інструкція" aria-label="Інструкція">?</button>
+  </header>
+
+  <div class="steps" id="steps">
+    <div data-s="1"><i></i>Слухаю</div><div data-s="2"><i></i>Аналіз</div><div data-s="3"><i></i>Промпт</div><div data-s="4"><i></i>Відправка</div>
+  </div>
+
+  <!-- КРОК 1 -->
+  <section class="panel" id="p1">
+    <h2><span class="num">1</span><span class="gold-text">Слухаю вас</span><button class="how" data-how="h1">Як це працює?</button></h2>
+    <ol class="howto" id="h1">
+      <li>Поставте телефон поруч із собою (краще на зарядку). Екран сам не гасне, поки тестер слухає.</li>
+      <li><b>Не блокуйте телефон кнопкою і не згортайте тестер</b>: телефон вимикає мікрофон для згорнутих застосунків.</li>
+      <li>Натисніть великий діамант <b>СТАРТ</b>. Першого разу телефон спитає дозвіл на мікрофон: натисніть «Дозволити».</li>
+      <li>Грайте й говоріть уголос, як другові: <i>«подобається графіка»</i>, <i>«не подобається камера»</i>, <i>«баг: персонаж провалився в текстуру»</i>, <i>«треба додати мінікарту»</i>.</li>
+      <li>Слова «подобається / не подобається / баг / треба» допомагають тестеру правильно все розкласти.</li>
+      <li>Наприкінці натисніть рубін <b>СТОП</b>. Сказане з'явиться в полі нижче, з часом кожної фрази.</li>
+      <li>Текст можна виправити руками або дописати. Тестер збереже все сам, навіть якщо ви закриєте застосунок.</li>
+    </ol>
+    <div class="stage" id="stage">
+      <div class="bezel"><button class="brilliant" id="btnRec" aria-label="Увімкнути або вимкнути тестер">
+        <span class="lbl"><span class="ico" id="recIco">🎙</span><span id="recLbl">СТАРТ</span><span class="sub" id="recSub">увімкнути тестер</span></span>
+      </button></div>
+      <div class="status"><span class="dot"></span><span id="statusTxt">Тестер вимкнений</span></div>
+      <div class="interim" id="interim"></div>
+      <div class="stats">⏱ <b id="timer">00:00</b> · фраз: <b id="count">0</b></div>
+    </div>
+    <div class="note hidden" id="noSpeech"></div>
+    <label class="f" for="transcript">Що я сказав</label>
+    <textarea id="transcript" placeholder="Тут з'являться ваші коментарі… Можна також друкувати руками."></textarea>
+    <button class="gem" id="btnAnalyze"><span class="sp" style="left:12%;top:20%">✦</span><span class="sp" style="right:14%;bottom:18%;animation-delay:1.1s">✦</span>🔍 Проаналізувати</button>
+  </section>
+
+  <!-- КРОК 2 -->
+  <section class="panel hidden" id="p2">
+    <h2><span class="num">2</span><span class="gold-text">Аналіз</span><button class="how" data-how="h2">Як це працює?</button></h2>
+    <ol class="howto" id="h2">
+      <li>Тестер розклав ваші слова на розділи: 🐞 баги, 👎 не подобається, 💡 ідеї, 👍 подобається, 📝 інше.</li>
+      <li>Значок ❗ означає, що це важливо (ви сказали «дуже», «постійно», «вилітає» тощо).</li>
+      <li>Уважно перечитайте. Якщо щось потрапило не в той розділ, перенесіть рядок під потрібний заголовок.</li>
+      <li>Зайве видаліть. Те, що забули сказати, допишіть новим рядком у потрібному розділі.</li>
+      <li>Заголовки з емодзі (🐞 👎 💡 👍 📝) не видаляйте: за ними тестер складає промпт.</li>
+      <li>Коли все правильно, натисніть <b>Згенерувати промпт</b>.</li>
+    </ol>
+    <p class="hint" id="aiNote"></p>
+    <textarea id="analysis" style="min-height:240px"></textarea>
+    <button class="gem amethyst" id="btnPrompt"><span class="sp" style="left:10%;top:24%">✦</span><span class="sp" style="right:12%;top:30%;animation-delay:.8s">✦</span>✨ Згенерувати промпт</button>
+  </section>
+
+  <!-- КРОК 3 -->
+  <section class="panel hidden" id="p3">
+    <h2><span class="num">3</span><span class="gold-text">Промпт для Claude</span><button class="how" data-how="h3">Як це працює?</button></h2>
+    <ol class="howto" id="h3">
+      <li>Це готове завдання для Claude (або іншого ШІ): що виправити, в якому порядку і чого не чіпати.</li>
+      <li>Перечитайте його. Можна змінити будь-яке слово прямо тут.</li>
+      <li><b>Зберегти Word</b> збереже файл .docx на телефон (у «Завантаження» або «Файли»).</li>
+      <li><b>Надіслати</b> відкриває вибір: WhatsApp, Telegram, пошта або будь-який інший застосунок.</li>
+      <li>Потім відкрийте Claude, прикріпіть файл і напишіть: <i>«Виправ гру за цим документом»</i>.</li>
+    </ol>
+    <textarea id="prompt" style="min-height:280px"></textarea>
+    <div class="row">
+      <button class="gem emerald" id="btnSave"><span class="sp" style="left:12%;top:22%">✦</span>💾 Зберегти Word</button>
+      <button class="gem" id="btnSend"><span class="sp" style="right:12%;top:22%;animation-delay:.6s">✦</span>📤 Надіслати</button>
+    </div>
+    <button class="gem flat amethyst" id="btnCopy">📋 Копіювати текст промпту</button>
+  </section>
+
+  <p class="center"><button class="linkbtn" id="btnNew">↺ Почати нову сесію тестування</button></p>
+  <p class="center small">Розпізнавання голосу працює через інтернет у Chrome (Android) і Safari (iPhone).</p>
+</div>
+
+<!-- НАДІСЛАТИ -->
+<div class="modal hidden" id="mSend" role="dialog" aria-modal="true"><div class="panel card">
+  <button class="x" data-close="mSend" aria-label="Закрити">✕</button>
+  <h3 class="gold-text">НАДІСЛАТИ ПРОМПТ</h3>
+  <p class="hint">Найкраще: <b>файл Word</b>. Його можна одразу прикріпити в Claude.</p>
+  <button class="gem emerald" id="sendFile">📎 Файл Word: WhatsApp, Telegram, пошта…</button>
+  <p class="small hidden" id="sendFileNo">Цей браузер не вміє надсилати файли напряму. Натисніть «Зберегти Word», а потім прикріпіть файл у месенджері, або надішліть текстом нижче.</p>
+  <p class="hint" style="margin-top:16px">Або надіслати <b>текстом</b>:</p>
+  <div class="row">
+    <button class="gem flat" id="sendWA">WhatsApp</button>
+    <button class="gem flat" id="sendTG">Telegram</button>
+    <button class="gem flat" id="sendMail">Пошта</button>
+  </div>
+  <p class="small">Якщо промпт дуже довгий, месенджер може обрізати текст. Тоді надсилайте файлом.</p>
+</div></div>
+
+<!-- НАЛАШТУВАННЯ -->
+<div class="modal hidden" id="mSettings" role="dialog" aria-modal="true"><div class="panel card">
+  <button class="x" data-close="mSettings" aria-label="Закрити">✕</button>
+  <h3 class="gold-text">НАЛАШТУВАННЯ</h3>
+  <label class="f" for="sGame">Назва гри</label>
+  <input id="sGame" placeholder="Напр.: Легенди 90-х">
+  <p class="small">Потрапить у промпт і в назву файлу. Можна залишити порожнім.</p>
+  <label class="f" for="sLang">Мова, якою ви говорите</label>
+  <select id="sLang"><option value="uk-UA">Українська</option><option value="en-US">English</option><option value="ru-RU">Русский</option></select>
+  <p class="small">Оберіть ту мову, якою коментуєте. Від неї залежить точність розпізнавання.</p>
+  <label class="f" for="sMail">Моя пошта (для кнопки «Пошта»)</label>
+  <input id="sMail" type="email" placeholder="name@gmail.com">
+  <p class="small">Якщо вписати, лист одразу буде адресований вам. Можна залишити порожнім.</p>
+  <label class="f" for="sKey">Розумний аналіз Gemini: ключ (необов'язково)</label>
+  <input id="sKey" placeholder="AIza…" autocomplete="off">
+  <ol class="small" style="padding-left:18px;margin:6px 0">
+    <li>Без ключа аналіз робиться прямо на телефоні, за ключовими словами. Це швидко і безкоштовно.</li>
+    <li>З ключем аналіз робить ШІ Gemini: краще розуміє живу мову, чистить «е-е-е» і повтори.</li>
+    <li>Як отримати ключ: відкрийте <b>aistudio.google.com/apikey</b>, увійдіть у Google, натисніть «Create API key», скопіюйте і вставте сюди.</li>
+    <li>Ключ зберігається лише на цьому телефоні.</li>
+  </ol>
+  <button class="gem" id="sSave">✔ Зберегти налаштування</button>
+</div></div>
+
+<!-- ВСТАНОВЛЕННЯ -->
+<div class="modal hidden" id="mInstall" role="dialog" aria-modal="true"><div class="panel card">
+  <button class="x" data-close="mInstall" aria-label="Закрити">✕</button>
+  <h3 class="gold-text">ВСТАНОВИТИ НА ТЕЛЕФОН</h3>
+  <p class="hint">Тестер встановлюється за 10 секунд, без Play Market і App Store. З'явиться іконка на головному екрані, і застосунок відкриватиметься миттєво.</p>
+  <div class="tabs"><button id="tA" class="act">Android</button><button id="tI">iPhone / iPad</button><button id="tB">Комп'ютер</button></div>
+  <div id="iA"><ol>
+    <li>Відкрийте це посилання в <b>Chrome</b>.</li>
+    <li>Натисніть зелену кнопку нижче <b>«Встановити зараз»</b> і підтвердьте «Встановити».</li>
+    <li>Якщо кнопки немає: натисніть меню Chrome <b>⋮</b> (вгорі праворуч), далі <b>«Встановити застосунок»</b> або <b>«Додати на головний екран»</b>.</li>
+    <li>Іконка «ТЕСТЕР» з'явиться на головному екрані. Відкривайте його звідти.</li>
+    <li>При першому СТАРТі дозвольте мікрофон.</li>
+  </ol><button class="gem emerald" id="doInstall">⤓ Встановити зараз</button></div>
+  <div id="iI" class="hidden"><ol>
+    <li>Відкрийте це посилання саме в <b>Safari</b> (у Chrome на iPhone встановити не вийде).</li>
+    <li>Натисніть кнопку <b>«Поділитися»</b> (квадрат зі стрілкою вгору) внизу екрана.</li>
+    <li>Прокрутіть список і натисніть <b>«На екран "Додому"»</b>.</li>
+    <li>Натисніть <b>«Додати»</b> вгорі праворуч. Іконка «ТЕСТЕР» з'явиться на робочому столі.</li>
+    <li>При першому СТАРТі дозвольте мікрофон і розпізнавання мовлення.</li>
+  </ol></div>
+  <div id="iB" class="hidden"><ol>
+    <li>Тестер працює і просто в браузері <b>Chrome</b> або <b>Edge</b>, нічого не встановлюючи.</li>
+    <li>Щоб встановити як програму: натисніть значок <b>⤓</b> праворуч в адресному рядку і підтвердьте.</li>
+    <li>Потрібен мікрофон (вбудований або гарнітура).</li>
+  </ol></div>
+</div></div>
+
+<!-- ПІДТВЕРДЖЕННЯ -->
+<div class="modal hidden" id="mConfirm" role="dialog" aria-modal="true"><div class="panel card">
+  <h3 class="gold-text">НОВА СЕСІЯ?</h3>
+  <p>Поточні коментарі, аналіз і промпт буде стерто. Якщо потрібно, спершу збережіть Word.</p>
+  <div class="row"><button class="gem flat" id="cNo">Скасувати</button><button class="gem flat amethyst" id="cYes">Так, почати нову</button></div>
+</div></div>
+
+<!-- ОНБОРДИНГ -->
+<div class="modal hidden" id="mHelp" role="dialog" aria-modal="true"><div class="panel card">
+  <button class="x" data-close="mHelp" aria-label="Закрити">✕</button>
+  <div id="slides"></div>
+  <div class="dots" id="dots"></div>
+  <div class="row"><button class="gem flat" id="hPrev">← Назад</button><button class="gem flat emerald" id="hNext">Далі →</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const LS='tester.v1';
+const st=Object.assign({transcript:'',analysis:'',prompt:'',step:1,seen:false,game:'',lang:'uk-UA',mail:'',key:''},JSON.parse(localStorage.getItem(LS)||'{}'));
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify(st))}catch(e){}};
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),2600)}
+
+/* ---------- кроки ---------- */
+function setStep(n){st.step=Math.max(st.step,n);save();renderSteps()}
+function renderSteps(){
+  document.querySelectorAll('#steps div').forEach(d=>d.classList.toggle('on',+d.dataset.s<=st.step||(+d.dataset.s===1&&rec.on)));
+  $('p2').classList.toggle('hidden',!st.analysis);
+  $('p3').classList.toggle('hidden',!st.prompt);
+}
+document.querySelectorAll('.how').forEach(b=>b.onclick=()=>{const h=$(b.dataset.how);h.classList.toggle('open');b.textContent=h.classList.contains('open')?'Сховати':'Як це працює?'});
+
+/* ---------- розпізнавання ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const rec={on:false,r:null,start:0,elapsed:0,timer:null,wake:null,count:0};
+function fmt(ms){const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function curMs(){return rec.elapsed+(rec.on?Date.now()-rec.start:0)}
+function countLines(){return $('transcript').value.split('\n').filter(l=>l.trim()).length}
+function appendLine(text){
+  text=text.trim(); if(!text) return;
+  text=text.charAt(0).toUpperCase()+text.slice(1);
+  const ta=$('transcript'); const line='['+fmt(curMs())+'] '+text;
+  ta.value=(ta.value.trim()?ta.value.replace(/\s+$/,'')+'\n':'')+line;
+  ta.scrollTop=ta.scrollHeight; st.transcript=ta.value; save(); $('count').textContent=countLines();
+}
+function makeRec(){
+  const r=new SR(); r.lang=st.lang; r.continuous=true; r.interimResults=true; r.maxAlternatives=1;
+  r.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){const res=e.results[i];if(res.isFinal)appendLine(res[0].transcript);else interim+=res[0].transcript}
+    $('interim').textContent=interim?'чую: '+interim:''};
+  r.onerror=e=>{
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){stopRec();showNote('Немає доступу до мікрофона. Дозвольте мікрофон у налаштуваннях браузера (значок 🔒 біля адреси), потім натисніть СТАРТ ще раз.')}
+    else if(e.error==='network'){showNote('Немає інтернету: розпізнавання голосу потребує мережі. Перевірте Wi-Fi або мобільний інтернет.')}
+  };
+  r.onend=()=>{if(rec.on){setTimeout(()=>{if(rec.on){try{rec.r.start()}catch(_){rec.r=makeRec();try{rec.r.start()}catch(__){}}}},200)}};
+  return r;
+}
+function showNote(t){const n=$('noSpeech');n.textContent=t;n.classList.remove('hidden')}
+async function startRec(){
+  if(!SR){showNote('Цей браузер не вміє розпізнавати голос. Відкрийте тестер у Chrome (Android, комп\'ютер) або Safari (iPhone). Поки що можна друкувати коментарі вручну в поле нижче.');return}
+  $('noSpeech').classList.add('hidden');
+  rec.on=true; rec.start=Date.now(); rec.r=makeRec();
+  try{rec.r.start()}catch(e){}
+  try{if(navigator.wakeLock)rec.wake=await navigator.wakeLock.request('screen')}catch(e){}
+  rec.timer=setInterval(()=>$('timer').textContent=fmt(curMs()),500);
+  renderRec();
+}
+function stopRec(){
+  if(!rec.on)return; rec.on=false; rec.elapsed+=Date.now()-rec.start;
+  try{rec.r&&rec.r.stop()}catch(e){} clearInterval(rec.timer); $('interim').textContent='';
+  try{rec.wake&&rec.wake.release()}catch(e){} rec.wake=null;
+  renderRec(); if(countLines())toast('Готово! Перечитайте текст і натисніть «Проаналізувати»');
+}
+document.addEventListener('visibilitychange',async()=>{if(rec.on&&document.visibilityState==='visible'&&navigator.wakeLock){try{rec.wake=await navigator.wakeLock.request('screen')}catch(e){}}});
+function renderRec(){
+  $('stage').classList.toggle('live',rec.on);
+  $('recLbl').textContent=rec.on?'СТОП':'СТАРТ';
+  $('recSub').textContent=rec.on?'вимкнути тестер':'увімкнути тестер';
+  $('recIco').textContent=rec.on?'⏹':'🎙';
+  $('statusTxt').textContent=rec.on?'Тестер слухає… Говоріть':'Тестер вимкнений';
+  $('timer').textContent=fmt(curMs()); $('count').textContent=countLines(); renderSteps();
+}
+$('btnRec').onclick=()=>rec.on?stopRec():startRec();
+$('transcript').addEventListener('input',e=>{st.transcript=e.target.value;save();$('count').textContent=countLines()});
+
+/* ---------- аналіз (локальний) ---------- */
+const RX={
+  bug:/баг|глюк|лаг|лагає|лагает|зависа|завис|виліта|вылета|вилетіл|вылетел|краш|crash|bug|не працю|не работа|не спрацьов|не срабатыва|застряг|застрял|застряє|провалив|провалил|крив[аоі] текстур|фпс|fps|гальму|тормоз|фриз|помилк|ошибк|зламал|сломал|чорний екран|черный экран|просіда|проседа/i,
+  dislike:/не подоба|не нрав|не сподоба|погано|плохо|жах|ужас|бісить|бесит|дратує|раздража|нудно|скучно|занадто складн|слишком сложн|незручн|неудобн|криво|відстій|отстой|занадто|слишком|повільн|медленн|не зрозуміл|непонятн|не видно|дивно|странно|некрасив|відстой|hate|annoying|boring/i,
+  idea:/треба|потрібно|нужно|надо|додати|добавить|добавити|зробити|сделать|хочу|хотілось|хотелось|хотів би|хотел бы|краще б|лучше б|краще було б|можна б|можно было|пропоную|предлагаю|змінити|изменить|замінити|заменить|прибрати|убрать|має бути|мало б|должно|повинн|should|add |need/i,
+  like:/подоба|нрав|класн|клас|круто|кльово|клёво|супер|чудов|отличн|гарн|красив|прикольн|зручн|удобн|кайф|вау|топ|сподоба|бомба|шикарн|good|nice|cool|love|awesome|great/i
+};
+const CRIT=/критич|взагалі не|вообще не|неможливо|невозможно|постійно|постоянно|завжди|всегда|виліта|вылета|краш|дуже|очень|жахлив|ужасн|терміново|срочно|!!/i;
+const AREAS=[
+  ['Продуктивність',/лаг|фпс|fps|гальм|тормоз|завис|виліт|вылет|фриз|загрузк|завантаж|просіда|проседа/i],
+  ['Графіка',/графік|графон|текстур|модел|анімац|анимац|світл|освітл|свет|колір|кольор|цвет|ефект|эффект|картинк|візуал|визуал|тіні|тени/i],
+  ['Звук',/звук|музик|музык|гучн|громк|озвуч|голос|саунд/i],
+  ['Керування',/керуван|управлен|кнопк|джойстик|стриб|прыж|біг|бег|рух|движен|чутлив|чувствит|миш|мыш|клавіш|клавиш|прицел|приціл/i],
+  ['Камера',/камер|ракурс|огляд|обзор/i],
+  ['Інтерфейс',/меню|інтерфейс|интерфейс|шрифт|напис|надпис|hud|іконк|иконк|мінікарт|миникарт|карт[аиу]\b|екран|экран/i],
+  ['Баланс',/складн|сложн|легк|баланс|урон|шкод|здоров|хп|hp|ворог|враг|бос|босс|зброя|зброї|оружи|патрон|нагород|награ/i],
+  ['Сюжет',/сюжет|діалог|диалог|квест|місі|мисси|персонаж|історі|истори/i]
+];
+const SECTIONS=[['bug','🐞 БАГИ'],['dislike','👎 НЕ ПОДОБАЄТЬСЯ'],['idea','💡 ІДЕЇ / ПОБАЖАННЯ'],['like','👍 ПОДОБАЄТЬСЯ (не чіпати)'],['other','📝 ІНШЕ / НОТАТКИ']];
+function classify(t){
+  if(RX.bug.test(t))return'bug';
+  if(RX.dislike.test(t))return'dislike';
+  if(RX.idea.test(t))return'idea';
+  if(RX.like.test(t))return'like';
+  return'other';
+}
+function headerLine(){
+  const d=new Date();
+  return '🎮 Гра: '+(st.game||'—')+' · '+d.toLocaleDateString('uk-UA')+' · тривалість тесту: '+fmt(rec.elapsed);
+}
+function analyzeLocal(text){
+  const groups={bug:[],dislike:[],idea:[],like:[],other:[]};
+  text.split('\n').forEach(raw=>{
+    let l=raw.trim(); if(!l)return;
+    let tm=''; const m=l.match(/^\[(\d{1,2}:\d{2})\]\s*/); if(m){tm=m[1];l=l.slice(m[0].length)}
+    l.split(/(?<=[.!?])\s+/).forEach(part=>{
+      part=part.trim().replace(/\s+/g,' '); if(part.length<2)return;
+      const c=classify(part);
+      const area=(AREAS.find(a=>a[1].test(part))||[''])[0];
+      const crit=(c==='bug'||c==='dislike')&&CRIT.test(part);
+      groups[c].push((crit?'❗ ':'')+(area?'['+area+'] ':'')+part+(tm?' ('+tm+')':''));
+    });
+  });
+  // критичні — вгору
+  ['bug','dislike'].forEach(k=>groups[k].sort((a,b)=>(b.startsWith('❗')?1:0)-(a.startsWith('❗')?1:0)));
+  let out=headerLine()+'\n';
+  SECTIONS.forEach(([k,title])=>{out+='\n'+title+' ('+groups[k].length+')\n';groups[k].forEach((it,i)=>out+=(i+1)+'. '+it+'\n');if(!groups[k].length)out+='—\n'});
+  return out.trim();
+}
+async function analyzeAI(text){
+  const instr=`Ти — аналітик ігрового тестування. Нижче — розшифровка живих голосових коментарів гравця під час гри (може містити помилки розпізнавання, повтори, слова-паразити). Проаналізуй і поверни ЛИШЕ звіт українською у ТОЧНО такому форматі, без markdown і без жодних інших слів:
+
+${headerLine()}
+
+🐞 БАГИ (N)
+1. ❗ [Область] короткий чіткий опис (мм:сс)
+👎 НЕ ПОДОБАЄТЬСЯ (N)
+1. ...
+💡 ІДЕЇ / ПОБАЖАННЯ (N)
+1. ...
+👍 ПОДОБАЄТЬСЯ (не чіпати) (N)
+1. ...
+📝 ІНШЕ / НОТАТКИ (N)
+1. ...
+
+Правила: ❗ лише для критичного; Область — одна з: Продуктивність, Графіка, Звук, Керування, Камера, Інтерфейс, Баланс, Сюжет (або без неї); об'єднуй повтори; виправляй очевидні помилки розпізнавання; нічого не вигадуй; якщо розділ порожній — пиши «—».
+
+РОЗШИФРОВКА:
+${text}`;
+  const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key='+encodeURIComponent(st.key.trim());
+  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),30000);
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:instr}]}]}),signal:ctrl.signal});
+  clearTimeout(to);
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json(); const t=j.candidates?.[0]?.content?.parts?.map(p=>p.text).join('')||'';
+  if(!/🐞/.test(t))throw new Error('bad format'); return t.trim();
+}
+$('btnAnalyze').onclick=async()=>{
+  if(rec.on)stopRec();
+  const text=$('transcript').value.trim();
+  if(!text){toast('Спершу скажіть або впишіть хоча б один коментар');return}
+  const b=$('btnAnalyze'); b.disabled=true; const old=b.innerHTML; b.textContent='⏳ Аналізую…';
+  let res,how='Аналіз зроблено на телефоні за ключовими словами.';
+  if(st.key.trim()){try{res=await analyzeAI(text);how='Аналіз зробив ШІ Gemini.'}catch(e){how='Gemini не відповів ('+e.message+'), тому аналіз зроблено на телефоні.'}}
+  if(!res)res=analyzeLocal(text);
+  b.disabled=false; b.innerHTML=old;
+  st.analysis=res; $('analysis').value=res; $('aiNote').textContent=how+' Перечитайте й виправте, якщо треба.';
+  setStep(2); save(); renderSteps();
+  $('p2').scrollIntoView({behavior:'smooth',block:'start'});
+};
+$('analysis').addEventListener('input',e=>{st.analysis=e.target.value;save()});
+
+/* ---------- промпт ---------- */
+function parseAnalysis(txt){
+  const map={'🐞':'bug','👎':'dislike','💡':'idea','👍':'like','📝':'other'};
+  const g={bug:[],dislike:[],idea:[],like:[],other:[]}; let cur=null;
+  txt.split('\n').forEach(raw=>{
+    const l=raw.trim(); if(!l||l==='—')return;
+    const key=Object.keys(map).find(e=>l.startsWith(e));
+    if(key){cur=map[key];return}
+    if(l.startsWith('🎮'))return;
+    if(cur)g[cur].push(l.replace(/^\d+[.)]\s*/,''));
+  });
+  return g;
+}
+function buildPrompt(){
+  const g=parseAnalysis($('analysis').value); const game=st.game||'гри';
+  const list=a=>a.map((x,i)=>(i+1)+'. '+x).join('\n');
+  let p=`Ти — досвідчений розробник і геймдизайнер. Нижче звіт живого тестування ${st.game?'гри «'+st.game+'»':'моєї гри'}: я грав і вголос коментував, а коментарі розпізнано й згруповано. Виправ і покращ гру за цим звітом.\n`;
+  p+='\nПОРЯДОК РОБОТИ:\n';
+  let n=1;
+  if(g.bug.length)p+=`${n++}. Спершу виправ усі БАГИ. ❗ означає критичне: з нього починай.\n`;
+  if(g.dislike.length)p+=`${n++}. Потім переглянь те, що НЕ ПОДОБАЄТЬСЯ, і зроби краще: знайди причину, а не латай симптом.\n`;
+  if(g.idea.length)p+=`${n++}. Реалізуй ІДЕЇ / ПОБАЖАННЯ, якщо вони не ламають наявну механіку. Якщо ідея суперечить іншій, запропонуй найкращий варіант.\n`;
+  if(g.like.length)p+=`${n++}. НЕ ЧІПАЙ і не погіршуй те, що в розділі ПОДОБАЄТЬСЯ: це сильні сторони ${game}.\n`;
+  if(g.other.length)p+=`${n++}. Розділ ІНШЕ — врахуй як контекст.\n`;
+  if(n===1)p+='1. Розглянь коментарі нижче і виправ те, що в них описано.\n';
+  if(g.bug.length)p+='\n🐞 БАГИ:\n'+list(g.bug)+'\n';
+  if(g.dislike.length)p+='\n👎 НЕ ПОДОБАЄТЬСЯ:\n'+list(g.dislike)+'\n';
+  if(g.idea.length)p+='\n💡 ІДЕЇ / ПОБАЖАННЯ:\n'+list(g.idea)+'\n';
+  if(g.like.length)p+='\n👍 ПОДОБАЄТЬСЯ (НЕ ЧІПАТИ):\n'+list(g.like)+'\n';
+  if(g.other.length)p+='\n📝 ІНШЕ / НОТАТКИ:\n'+list(g.other)+'\n';
+  p+=`\nВИМОГИ:\n- У квадратних дужках вказано область гри, у круглих — час коментаря від початку тесту.\n- Коментарі розпізнано з голосу, тож можливі неточні слова: розумій за змістом.\n- Якщо пункт незрозумілий, зроби найрозумніше припущення і познач його.\n- Після правок перевір, що гра запускається і нічого не зламалося.\n- Наприкінці дай коротку таблицю: пункт → що зроблено → де в коді.`;
+  return p;
+}
+$('btnPrompt').onclick=()=>{
+  if(!$('analysis').value.trim()){toast('Спершу натисніть «Проаналізувати»');return}
+  st.prompt=buildPrompt(); $('prompt').value=st.prompt; setStep(3); save(); renderSteps();
+  $('p3').scrollIntoView({behavior:'smooth',block:'start'}); toast('Промпт готовий. Перечитайте його');
+};
+$('prompt').addEventListener('input',e=>{st.prompt=e.target.value;save()});
+
+/* ---------- DOCX (без бібліотек) ---------- */
+const crcT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=crcT[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+function zip(files){
+  const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+  const d=new Date(),time=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1),date=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  for(const [name,str] of files){
+    const nb=enc.encode(name),data=enc.encode(str),crc=crc32(data);
+    const h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,time,true);h.setUint16(12,date,true);
+    h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,nb.length,true);h.setUint16(28,0,true);
+    parts.push(new Uint8Array(h.buffer),nb,data);
+    const c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,0,true);c.setUint16(12,time,true);c.setUint16(14,date,true);
+    c.setUint32(16,crc,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,nb.length,true);c.setUint32(42,off,true);
+    cen.push(new Uint8Array(c.buffer),nb); off+=30+nb.length+data.length;
+  }
+  const cs=cen.reduce((a,b)=>a+b.length,0),e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cen,new Uint8Array(e.buffer)],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');
+function para(t,o={}){
+  const ppr='<w:pPr>'+(o.center?'<w:jc w:val="center"/>':'')+'<w:spacing w:after="'+(o.after??80)+'"/></w:pPr>';
+  const rpr='<w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri" w:eastAsia="Calibri"/>'+(o.bold?'<w:b/>':'')+(o.color?'<w:color w:val="'+o.color+'"/>':'')+'<w:sz w:val="'+(o.size||22)+'"/></w:rPr>';
+  return '<w:p>'+ppr+'<w:r>'+rpr+'<w:t xml:space="preserve">'+esc(t)+'</w:t></w:r></w:p>';
+}
+function buildDocx(){
+  const body=[];
+  body.push(para('ТЕСТЕР — промпт для виправлення гри',{bold:true,size:36,color:'8A5A12',center:true,after:60}));
+  body.push(para((st.game?'Гра: '+st.game+' · ':'')+new Date().toLocaleString('uk-UA'),{size:20,color:'777777',center:true,after:240}));
+  body.push(para('Як користуватися: прикріпіть цей файл у Claude і напишіть «Виправ гру за цим документом».',{size:20,color:'555555',after:240}));
+  ($('prompt').value||'').split('\n').forEach(l=>{
+    const head=/^(ПОРЯДОК РОБОТИ|ВИМОГИ|🐞|👎|💡|👍|📝)/.test(l.trim());
+    body.push(para(l||' ',head?{bold:true,size:26,color:'8A5A12',after:60}:{}));
+  });
+  if($('transcript').value.trim()){
+    body.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
+    body.push(para('Додаток: повна розшифровка коментарів',{bold:true,size:28,color:'8A5A12',after:160}));
+    $('transcript').value.split('\n').forEach(l=>l.trim()&&body.push(para(l,{size:20,color:'444444',after:40})));
+  }
+  const doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body.join('')+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+  return zip([
+    ['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'],
+    ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'],
+    ['word/document.xml',doc]
+  ]);
+}
+function fileName(){const d=new Date();const g=(st.game||'gra').replace(/[^\p{L}\p{N}]+/gu,'_').slice(0,30);return 'Tester_'+g+'_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'_'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+'.docx'}
+function needPrompt(){if(!$('prompt').value.trim()){toast('Спершу згенеруйте промпт');return false}return true}
+$('btnSave').onclick=()=>{
+  if(!needPrompt())return;
+  const blob=buildDocx(),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fileName();document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500); setStep(4); toast('Word збережено: '+a.download);
+};
+$('btnCopy').onclick=async()=>{
+  if(!needPrompt())return;
+  try{await navigator.clipboard.writeText($('prompt').value);toast('Скопійовано. Вставте в Claude')}catch(e){$('prompt').select();document.execCommand('copy');toast('Скопійовано')}
+};
+/* ---------- надіслати ---------- */
+function open(id){$(id).classList.remove('hidden')} function close(id){$(id).classList.add('hidden')}
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>close(b.dataset.close));
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m&&m.id!=='mConfirm')close(m.id)}));
+function canShareFile(){try{return !!(navigator.canShare&&navigator.canShare({files:[new File(['x'],'t.docx',{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})]}))}catch(e){return false}}
+$('btnSend').onclick=()=>{if(!needPrompt())return;const ok=canShareFile();$('sendFile').classList.toggle('hidden',!ok);$('sendFileNo').classList.toggle('hidden',ok);open('mSend')};
+$('sendFile').onclick=async()=>{
+  const f=new File([buildDocx()],fileName(),{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  try{await navigator.share({files:[f],title:'Промпт ТЕСТЕР',text:'Промпт для виправлення гри'});setStep(4);close('mSend');toast('Надіслано')}catch(e){if(e.name!=='AbortError')toast('Не вдалося надіслати. Спробуйте «Зберегти Word»')}
+};
+const go=u=>{setStep(4);close('mSend');window.open(u,'_blank')};
+$('sendWA').onclick=()=>go('https://wa.me/?text='+encodeURIComponent($('prompt').value));
+$('sendTG').onclick=()=>go('https://t.me/share/url?url='+encodeURIComponent('Промпт ТЕСТЕР'+(st.game?' — '+st.game:''))+'&text='+encodeURIComponent('\n'+$('prompt').value));
+$('sendMail').onclick=()=>go('mailto:'+encodeURIComponent(st.mail||'')+'?subject='+encodeURIComponent('Промпт ТЕСТЕР'+(st.game?' — '+st.game:''))+'&body='+encodeURIComponent($('prompt').value));
+
+/* ---------- налаштування ---------- */
+$('btnSettings').onclick=()=>{$('sGame').value=st.game;$('sLang').value=st.lang;$('sMail').value=st.mail;$('sKey').value=st.key;open('mSettings')};
+$('sSave').onclick=()=>{st.game=$('sGame').value.trim();st.lang=$('sLang').value;st.mail=$('sMail').value.trim();st.key=$('sKey').value.trim();save();close('mSettings');
+  if(rec.on){stopRec();startRec()} toast('Налаштування збережено')};
+
+/* ---------- нова сесія ---------- */
+$('btnNew').onclick=()=>open('mConfirm');
+$('cNo').onclick=()=>close('mConfirm');
+$('cYes').onclick=()=>{if(rec.on)stopRec();st.transcript=st.analysis=st.prompt='';st.step=1;rec.elapsed=0;save();
+  $('transcript').value=$('analysis').value=$('prompt').value='';close('mConfirm');renderRec();window.scrollTo({top:0,behavior:'smooth'});toast('Нова сесія. Натисніть СТАРТ')};
+
+/* ---------- встановлення ---------- */
+let deferred=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e});
+const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+if(standalone)$('btnInstall').classList.add('hidden');
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const isAndroid=/android/i.test(navigator.userAgent);
+function tab(t){['A','I','B'].forEach(x=>{$('t'+x).classList.toggle('act',x===t);$('i'+x).classList.toggle('hidden',x!==t)})}
+['A','I','B'].forEach(x=>$('t'+x).onclick=()=>tab(x));
+$('btnInstall').onclick=()=>{tab(isIOS?'I':isAndroid?'A':'B');open('mInstall')};
+$('doInstall').onclick=async()=>{if(deferred){deferred.prompt();const r=await deferred.userChoice;deferred=null;if(r.outcome==='accepted'){close('mInstall');toast('Встановлено! Шукайте іконку ТЕСТЕР')}}else toast('Натисніть ⋮ у Chrome → «Встановити застосунок»')};
+window.addEventListener('appinstalled',()=>$('btnInstall').classList.add('hidden'));
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+/* ---------- онбординг ---------- */
+const SL=[
+  ['💎','Вітаю в ТЕСТЕРІ!','ТЕСТЕР слухає ваші коментарі, поки ви граєте, і робить з них готове завдання для Claude у файлі Word. Усе за 4 кнопки: <b>СТАРТ/СТОП → Проаналізувати → Згенерувати промпт → Зберегти або Надіслати</b>.'],
+  ['📲','Встановіть на телефон','Натисніть <b>⤓</b> угорі. <b>Android:</b> Chrome → «Встановити». <b>iPhone:</b> Safari → «Поділитися» → «На екран "Додому"». У ⚙ впишіть назву гри і мову.'],
+  ['🎙','Під час гри','Поставте телефон поруч, натисніть <b>СТАРТ</b> і говоріть уголос: «подобається…», «не подобається…», «баг…», «треба додати…». Діамант стане рубіном і мигатиме, поки тестер слухає.'],
+  ['🔍','Після гри','Натисніть <b>СТОП</b>, потім <b>Проаналізувати</b>. Перечитайте розділи (баги, не подобається, ідеї, подобається) і виправте, що треба. Далі <b>Згенерувати промпт</b> і перечитайте його.'],
+  ['📤','Відправте в Claude','<b>Зберегти Word</b> покладе файл на телефон. <b>Надіслати</b> відправить його в WhatsApp, Telegram або на пошту. Потім прикріпіть файл у Claude і напишіть: «Виправ гру за цим документом». Біля кожного кроку є кнопка «Як це працює?».']
+];
+let si=0;
+function renderSlide(){const s=SL[si];$('slides').innerHTML='<div class="slide"><div class="big">'+s[0]+'</div><h3 class="gold-text center">'+s[1]+'</h3><p>'+s[2]+'</p></div>';
+  $('dots').innerHTML=SL.map((_,i)=>'<span class="'+(i===si?'on':'')+'"></span>').join('');$('hPrev').disabled=si===0;$('hNext').textContent=si===SL.length-1?'Почати ✓':'Далі →'}
+$('hPrev').onclick=()=>{if(si>0){si--;renderSlide()}};
+$('hNext').onclick=()=>{if(si<SL.length-1){si++;renderSlide()}else{close('mHelp');st.seen=true;save()}};
+$('btnHelp').onclick=()=>{si=0;renderSlide();open('mHelp')};
+
+/* ---------- старт ---------- */
+$('transcript').value=st.transcript;$('analysis').value=st.analysis;$('prompt').value=st.prompt;
+renderRec();
+if(!st.seen){si=0;renderSlide();open('mHelp')}
+window.__tester={analyzeLocal,buildPrompt,buildDocx,state:st};
+})();
+</script>
+</body>
+</html>
