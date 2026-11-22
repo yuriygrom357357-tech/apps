@@ -1,0 +1,11 @@
+name = "novitni-apps-keys"
+main = "src/worker.js"
+compatibility_date = "2024-11-01"
+
+
+[vars]
+STORE_URL = "https://yuriygrom357357-tech.github.io/apps/"
+
+[[kv_namespaces]]
+binding = "ORDERS"
+id = "REPLACE_AFTER_wrangler_kv_namespace_create"
