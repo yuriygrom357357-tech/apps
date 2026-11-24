@@ -99,7 +99,9 @@ footer{color:var(--mut);font-size:13px;text-align:center;margin-top:30px}
       <li>Тривалість ставиться через скісну риску: <code>/1</code> ціла, <code>/2</code> половинна, <code>/4</code> четвертна, <code>/8</code> восьма, <code>/16</code> шістнадцята. Крапка в кінці робить ноту з крапкою: <code>C4/4.</code>. Без тривалості нота повторює тривалість попередньої (спочатку четвертна).</li>
       <li>Дієз: <code>C#4</code> або <code>до#</code>. Бемоль: <code>Bb4</code>, <code>Eb4</code> або <code>мі♭</code>.</li>
       <li>Пауза: <code>R/4</code> або <code>п/4</code>. Тактова риска <code>|</code> необов’язкова: вона потрібна лише для зручності.</li>
-      <li>Немає нот текстом? Натисни <b>«Імпорт MIDI»</b> (файл .mid) або <b>«Ноти з фото»</b> (сфотографований нотний лист розпізнає Gemini).</li>
+      <li>Немає нот текстом? Натисни <b>«📂 Завантажити файл»</b> і вибери будь-який файл з нотами: <b>MIDI</b> (.mid), <b>MusicXML</b> (.musicxml, .xml, .mxl з MuseScore, Sibelius, Finale, Dorico), <b>PDF</b> або <b>фото</b> нотного листа. Додаток сам визначить формат. Файл можна також просто перетягнути в поле нот.</li>
+      <li>MIDI та MusicXML читаються одразу, без інтернету. PDF і фото розпізнає Gemini: для цього потрібен ключ (розділ «🔑 Розпізнавання») або ручний шлях через AI Studio.</li>
+      <li>На телефоні кнопка <b>«📷 Сфотографувати»</b> відкриває камеру одразу.</li>
     </ol>
   </details>
   <textarea id="notes" spellcheck="false" aria-label="Ноти" placeholder="Наприклад: E4/4 E4 F4 G4 | G4 F4 E4 D4 | C4 C4 D4 E4 | E4/4. D4/8 D4/2"></textarea>
@@ -123,9 +125,11 @@ footer{color:var(--mut);font-size:13px;text-align:center;margin-top:30px}
     </label>
   </div>
   <div class="row">
-    <label class="btn" for="midiFile" tabindex="0" id="btnMidiLabel">🎹 Імпорт MIDI</label>
-    <input type="file" id="midiFile" accept=".mid,.midi,audio/midi" class="hidden">
-    <button type="button" id="btnPhoto">📷 Ноти з фото</button>
+    <label class="btn" for="anyFile" tabindex="0" id="btnFileLabel">📂 Завантажити файл (MIDI, MusicXML, PDF, фото)</label>
+    <input type="file" id="anyFile" class="hidden">
+    <label class="btn" for="camFile" tabindex="0" id="btnCamLabel">📷 Сфотографувати</label>
+    <input type="file" id="camFile" accept="image/*" capture="environment" class="hidden">
+    <button type="button" id="btnPhoto">🔑 Розпізнавання PDF / фото</button>
     <button type="button" id="btnClear">Очистити</button>
   </div>
   <div class="row hidden" id="trackPick">
@@ -137,10 +141,11 @@ footer{color:var(--mut);font-size:13px;text-align:center;margin-top:30px}
 
   <div id="photoBox" class="hidden" style="margin-top:12px">
     <details class="help" open>
-      <summary>Як розпізнати ноти з фото</summary>
+      <summary>Як розпізнати ноти з PDF або фото</summary>
       <ol>
-        <li><b>Найпростіше, без ключа:</b> натисни «Скопіювати промпт і відкрити AI Studio». У Google AI Studio встав промпт (Cmd+V), прикріпи фото нот (скріпка «+»), натисни Run. Скопіюй відповідь і встав у поле нот вище.</li>
-        <li><b>Автоматично:</b> встав свій безкоштовний Gemini API-ключ (AI Studio → «Get API key»), вибери фото і натисни «Розпізнати». Ключ зберігається тільки в цьому браузері.</li>
+        <li><b>Найпростіше, без ключа:</b> натисни «Скопіювати промпт і відкрити AI Studio». У Google AI Studio встав промпт (Cmd+V), прикріпи PDF або фото нот (кнопка «+»), натисни Run. Скопіюй відповідь і встав у поле нот вище.</li>
+        <li><b>Автоматично:</b> встав свій безкоштовний Gemini API-ключ (AI Studio → «Get API key»). Після цього будь-який PDF чи фото, завантажений кнопкою «📂 Завантажити файл», розпізнається сам. Ключ зберігається тільки в цьому браузері.</li>
+        <li>Багатосторінковий PDF теж підходить: розпізнається мелодія з усіх сторінок (до 20 МБ).</li>
         <li>Розпізнається верхній голос (мелодія). Обов’язково перевір результат на слух кнопкою «Слухати».</li>
       </ol>
     </details>
@@ -150,7 +155,7 @@ footer{color:var(--mut);font-size:13px;text-align:center;margin-top:30px}
     <div class="row">
       <label class="f">Gemini API-ключ<input type="password" id="gemKey" placeholder="AIza…" style="width:260px" autocomplete="off"></label>
       <label class="f">Модель<input type="text" id="gemModel" value="gemini-flash-latest" style="width:190px"></label>
-      <label class="f">Фото нот<input type="file" id="photoFile" accept="image/*"></label>
+      <label class="f">PDF або фото нот<input type="file" id="photoFile" accept="image/*,application/pdf,.pdf,.heic"></label>
       <button type="button" id="btnRecognize">🔍 Розпізнати</button>
     </div>
     <div class="status" id="photoStatus"></div>
@@ -904,8 +909,12 @@ function initUI(){
   ['trend','fitTempo','reps','chordRate','transpose','intro','swing'].forEach(id=>$(id).addEventListener('change',rebuild));
   $('btnPlay').onclick=play;$('btnStop').onclick=stop;
   $('btnMidi').onclick=downloadMidi;$('btnWav').onclick=downloadWav;
-  $('midiFile').addEventListener('change',onMidiFile);
-  $('btnMidiLabel').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('midiFile').click();}});
+  ['anyFile','camFile'].forEach(id=>$(id).addEventListener('change',e=>{const f=e.target.files[0];if(f)handleFile(f);e.target.value='';}));
+  [['btnFileLabel','anyFile'],['btnCamLabel','camFile']].forEach(([l,i])=>$(l).addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$(i).click();}}));
+  $('photoFile').addEventListener('change',e=>{if(e.target.files[0]){S.pendingFile=e.target.files[0];$('photoStatus').textContent='Вибрано: '+e.target.files[0].name;}});
+  const ta=$('notes');['dragover','dragenter'].forEach(ev=>ta.addEventListener(ev,e=>{e.preventDefault();ta.style.outline='2px dashed var(--acc)';}));
+  ['dragleave','drop'].forEach(ev=>ta.addEventListener(ev,()=>{ta.style.outline='';}));
+  ta.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files[0];if(f){e.preventDefault();handleFile(f);}});
   $('trackSel').addEventListener('change',()=>useTrack(+$('trackSel').value));
   $('btnPhoto').onclick=()=>{$('photoBox').classList.toggle('hidden');};
   $('btnAIStudioPrompt').onclick=async()=>{await copyText(PHOTO_PROMPT);toast('Промпт скопійовано: встав його в AI Studio');window.open('https://aistudio.google.com/prompts/new_chat','_blank','noopener');};
@@ -1026,10 +1035,9 @@ function renderPrompts(){
 }
 
 /* ================= MIDI import ================= */
-async function onMidiFile(e){
-  const f=e.target.files[0];if(!f)return;
+async function importMidi(f,buf){
   try{
-    const m=readMidi(await f.arrayBuffer());
+    const m=readMidi(buf);
     if(!m.tracks.length)throw new Error('У файлі не знайдено нот (окрім барабанів)');
     S.midiTracks=m.tracks;
     if(m.tempo)$('tempo').value=Math.round(clamp(m.tempo,40,220));
@@ -1040,27 +1048,119 @@ async function onMidiFile(e){
     sel.value=best;$('trackPick').classList.toggle('hidden',m.tracks.length<2);
     useTrack(best);
     $('importStatus').innerHTML='<span class="ok">✓ Імпортовано «'+f.name+'»</span>'+(m.tracks.length>1?' · вибрано доріжку «'+m.tracks[best].name+'». Якщо мелодія не та, вибери іншу доріжку вище.':'');
-  }catch(err){$('importStatus').innerHTML='<span style="color:var(--bad)">Помилка імпорту: '+err.message+'</span>';}
-  e.target.value='';
+  }catch(err){$('importStatus').innerHTML='<span style="color:var(--bad)">Помилка імпорту: '+esc(err.message)+'</span>';}
+}
+/* universal file handler */
+function setImp(html){$('importStatus').innerHTML=html;}
+async function handleFile(f){
+  setImp('⏳ Читаю «'+esc(f.name)+'»…');
+  try{
+    const buf=await f.arrayBuffer();const u=new Uint8Array(buf.slice(0,8));const head=String.fromCharCode(...u);
+    const name=(f.name||'').toLowerCase();
+    if(head.startsWith('MThd')||/\.(mid|midi|kar)$/.test(name)){await importMidi(f,buf);return;}
+    if(head.startsWith('PK')||name.endsWith('.mxl')){const xml=await mxlToXml(buf);importMusicXML(xml,f.name);return;}
+    const txtHead=new TextDecoder().decode(buf.slice(0,600));
+    if(/score-(partwise|timewise)/.test(txtHead)||/\.(musicxml|xml)$/.test(name)){importMusicXML(new TextDecoder().decode(buf),f.name);return;}
+    const isPdf=head.startsWith('%PDF')||name.endsWith('.pdf');
+    const isImg=(f.type||'').startsWith('image/')||/\.(jpe?g|png|webp|heic|heif|gif|bmp)$/.test(name);
+    if(isPdf||isImg){
+      const mime=isPdf?'application/pdf':(f.type||(name.endsWith('.png')?'image/png':name.match(/\.hei[cf]$/)?'image/heic':'image/jpeg'));
+      S.pendingFile=f;S.pendingMime=mime;$('photoBox').classList.remove('hidden');
+      if(f.size>19*1024*1024){setImp('<span style="color:var(--bad)">Файл завеликий для автоматичного розпізнавання (більше 19 МБ). Розбий PDF на частини або скористайся AI Studio.</span>');return;}
+      if(keyGem()){setImp('⏳ '+(isPdf?'PDF':'Фото')+' «'+esc(f.name)+'» передано в Gemini на розпізнавання…');await recognizePhoto();setImp($('photoStatus').innerHTML);}
+      else{setImp('📄 '+(isPdf?'PDF':'Фото')+' «'+esc(f.name)+'» завантажено. Щоб розпізнати ноти, встав Gemini-ключ нижче і натисни «🔍 Розпізнати», або скористайся кнопкою «Скопіювати промпт і відкрити AI Studio».');$('photoBox').scrollIntoView({behavior:'smooth',block:'center'});}
+      return;
+    }
+    if(/^(\s*[a-hA-Hрдмфслcо]|\s*до|\s*ре)/i.test(txtHead)&&f.size<200000){$('notes').value=new TextDecoder().decode(buf);S.userGenre=false;update();setImp('<span class="ok">✓ Текст нот завантажено з «'+esc(f.name)+'»</span>');return;}
+    throw new Error('формат «'+esc(f.name)+'» не підтримується. Підходять: MIDI, MusicXML, PDF, фото (JPG, PNG, HEIC) або текст з нотами.');
+  }catch(e){setImp('<span style="color:var(--bad)">Помилка: '+esc(e.message)+'</span>');}
+}
+/* .mxl (zip) reader */
+async function mxlToXml(buf){
+  const d=new DataView(buf);let eo=-1;for(let i=buf.byteLength-22;i>=Math.max(0,buf.byteLength-66000);i--){if(d.getUint32(i,true)===0x06054b50){eo=i;break}}
+  if(eo<0)throw new Error('пошкоджений архів .mxl');
+  const n=d.getUint16(eo+10,true);let p=d.getUint32(eo+16,true);const files={};
+  for(let k=0;k<n;k++){const method=d.getUint16(p+10,true),cs=d.getUint32(p+20,true),nl=d.getUint16(p+28,true),xl=d.getUint16(p+30,true),cl=d.getUint16(p+32,true),lo=d.getUint32(p+42,true);
+    const nm=new TextDecoder().decode(new Uint8Array(buf,p+46,nl));files[nm]={method,cs,lo};p+=46+nl+xl+cl;}
+  const read=async nm=>{const e=files[nm];const lnl=d.getUint16(e.lo+26,true),lxl=d.getUint16(e.lo+28,true);const data=new Uint8Array(buf,e.lo+30+lnl+lxl,e.cs);
+    if(e.method===0)return new TextDecoder().decode(data);
+    if(typeof DecompressionStream==='undefined')throw new Error('браузер не вміє розпаковувати .mxl: збережи файл як .musicxml');
+    return await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();};
+  let root=null;if(files['META-INF/container.xml']){const c=await read('META-INF/container.xml');const m=c.match(/full-path="([^"]+)"/);if(m&&files[m[1]])root=m[1];}
+  if(!root)root=Object.keys(files).find(k=>!k.startsWith('META-INF')&&/\.(xml|musicxml)$/i.test(k));
+  if(!root)throw new Error('у .mxl не знайдено партитуру');
+  return await read(root);
+}
+/* MusicXML → melody */
+function importMusicXML(xml,fname){
+  const doc=new DOMParser().parseFromString(xml,'application/xml');
+  if(doc.querySelector('parsererror'))throw new Error('не вдалося прочитати MusicXML');
+  const parts=[...doc.querySelectorAll('part')];if(!parts.length)throw new Error('у файлі немає партій');
+  const names={};doc.querySelectorAll('score-part').forEach(sp=>{const pn=sp.querySelector('part-name');names[sp.getAttribute('id')]=pn?pn.textContent.trim():sp.getAttribute('id');});
+  const STEP={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+  const melFromPart=part=>{
+    let div=1,t=0,notes=[],tempo=null,ts=null,voice0=null;
+    for(const m of part.querySelectorAll('measure')){
+      let pos=0;const mStart=t;
+      for(const el of m.children){
+        if(el.tagName==='attributes'){const dv=el.querySelector('divisions');if(dv)div=+dv.textContent||1;const tb=el.querySelector('time beats'),tt=el.querySelector('time beat-type');if(tb&&tt&&!ts)ts=tb.textContent.trim()+'/'+tt.textContent.trim();}
+        else if(el.tagName==='direction'||el.tagName==='sound'){const sd=el.tagName==='sound'?el:el.querySelector('sound');if(sd&&sd.getAttribute('tempo')&&!tempo)tempo=+sd.getAttribute('tempo');}
+        else if(el.tagName==='backup'){pos-=(+el.querySelector('duration').textContent)/div;}
+        else if(el.tagName==='forward'){pos+=(+el.querySelector('duration').textContent)/div;}
+        else if(el.tagName==='note'){
+          const durEl=el.querySelector(':scope>duration');const dur=durEl?(+durEl.textContent)/div:0;
+          const v=(el.querySelector(':scope>voice')||{}).textContent||'1';if(voice0===null)voice0=v;
+          const isChord=!!el.querySelector(':scope>chord');
+          if(el.querySelector(':scope>grace'))continue;
+          if(v!==voice0){if(!isChord)pos+=dur;continue;}
+          if(isChord)continue;
+          const pitch=el.querySelector(':scope>pitch');
+          if(pitch){const st=pitch.querySelector('step').textContent.trim();const al=+((pitch.querySelector('alter')||{}).textContent||0);const oc=+pitch.querySelector('octave').textContent;
+            const midi=12*(oc+1)+STEP[st]+Math.round(al);
+            const tieStop=[...el.querySelectorAll(':scope>tie')].some(x=>x.getAttribute('type')==='stop');
+            const prev=notes[notes.length-1];
+            if(tieStop&&prev&&prev.p===midi&&Math.abs(prev.s+prev.d-(mStart+pos))<1e-3)prev.d+=dur;
+            else notes.push({p:midi,s:mStart+pos,d:dur});}
+          pos+=dur;
+        }
+      }
+      // measure length: use max of pos reached
+      let mlen=pos;if(ts){const [b,bt]=ts.split('/').map(Number);mlen=Math.max(pos,b*4/bt);}
+      t=mStart+mlen;
+    }
+    return {notes,tempo,ts};
+  };
+  // choose part: first with notes (usually melody / top staff)
+  let best=null,bi=0;parts.forEach((pt,i)=>{if(best)return;const r=melFromPart(pt);if(r.notes.length){best=r;bi=i;}});
+  if(!best)throw new Error('у партитурі не знайдено нот');
+  if(best.tempo)$('tempo').value=Math.round(clamp(best.tempo,40,220));
+  if(best.ts&&['4/4','3/4','6/8'].includes(best.ts))$('metre').value=best.ts;
+  const q=x=>Math.round(x*4)/4;const mel=best.notes.map(n=>({p:n.p,s:q(n.s),d:Math.max(0.25,q(n.d))})).slice(0,400);
+  S.midiTracks=parts.map(pt=>{const r=melFromPart(pt);return {name:names[pt.getAttribute('id')]||'Партія',notes:r.notes};}).filter(x=>x.notes.length);
+  const sel=$('trackSel');sel.innerHTML='';S.midiTracks.forEach((t,i)=>{const o=document.createElement('option');o.value=i;o.textContent=t.name+' ('+t.notes.length+' нот)';sel.appendChild(o);});
+  $('trackPick').classList.toggle('hidden',S.midiTracks.length<2);sel.value=0;
+  $('notes').value=notesToText(mel,bpbOf($('metre').value));S.userGenre=false;update();
+  setImp('<span class="ok">✓ Імпортовано MusicXML «'+esc(fname)+'»</span>'+(S.midiTracks.length>1?' · взято партію «'+esc(S.midiTracks[0].name)+'». Якщо мелодія не та, вибери іншу партію вище.':''));
 }
 function useTrack(i){const mel=melodyFromTrack(S.midiTracks[i].notes);$('notes').value=notesToText(mel,bpbOf($('metre').value));S.userGenre=false;update();}
 
 /* ================= photo (Gemini) ================= */
-const PHOTO_PROMPT=`Read the sheet music in the attached image and transcribe ONLY the melody (the top voice of the first staff), in reading order.
+const PHOTO_PROMPT=`Read the sheet music in the attached image or PDF (all pages) and transcribe ONLY the melody (the top voice of the first staff), in reading order.
 Output format, nothing else:
 Line 1: TEMPO=<bpm, or 100 if not written> METRE=<4/4, 3/4 or 6/8>
 Line 2: the notes as space-separated tokens <Note><accidental><octave>/<duration>, e.g. C4/4 D#4/8 Bb3/2 G4/4.
 Durations: /1 whole, /2 half, /4 quarter, /8 eighth, /16 sixteenth; add a dot for dotted notes (C4/4.). Rests: R/4. Middle C = C4. Apply the key signature to every note (write the actual sharps/flats). Put | between bars.`;
 async function recognizePhoto(){
-  const key=$('gemKey').value.trim();const f=$('photoFile').files[0];
+  const key=keyGem();const f=S.pendingFile||$('photoFile').files[0];
   if(!key){$('photoStatus').innerHTML='<span style="color:var(--bad)">Встав Gemini API-ключ або скористайся кнопкою «Скопіювати промпт і відкрити AI Studio».</span>';return;}
-  if(!f){$('photoStatus').innerHTML='<span style="color:var(--bad)">Вибери фото нот.</span>';return;}
+  if(!f){$('photoStatus').innerHTML='<span style="color:var(--bad)">Вибери PDF або фото нот.</span>';return;}
+  const mime=(S.pendingFile===f&&S.pendingMime)||(f.type==='application/pdf'||/\.pdf$/i.test(f.name)?'application/pdf':(f.type||'image/jpeg'));
   LS.set('nm_gemkey',key);
   $('photoStatus').textContent='⏳ Gemini розпізнає ноти…';$('btnRecognize').disabled=true;
   try{
     const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(f)});
     const model=$('gemModel').value.trim()||'gemini-flash-latest';
-    const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:PHOTO_PROMPT},{inline_data:{mime_type:f.type||'image/jpeg',data:b64}}]}]})});
+    const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:PHOTO_PROMPT},{inline_data:{mime_type:mime,data:b64}}]}]})});
     const j=await resp.json();
     if(!resp.ok)throw new Error(j.error&&j.error.message||('HTTP '+resp.status));
     const text=(j.candidates&&j.candidates[0]&&j.candidates[0].content.parts.map(p=>p.text||'').join('\n'))||'';
