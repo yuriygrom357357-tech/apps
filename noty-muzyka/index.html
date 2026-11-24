@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>НОТИ → МУЗИКА</title>
+<meta name="description" content="Перетворює ноти на музику: аналіз характеру, стилю й жанру, аранжування в MIDI, звук для Suno, ElevenLabs і Google AI Studio.">
+<style>
+:root{--bg:#0f1115;--card:#171a21;--card2:#1e222b;--line:#2a2f3a;--tx:#e9ecf2;--mut:#9aa3b2;--acc:#f5b942;--acc2:#5ec4ff;--ok:#5fd38d;--bad:#ff6b6b;--r:14px}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+a{color:var(--acc2)}
+.wrap{max-width:1020px;margin:0 auto;padding:20px 16px 80px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+h1{font-size:28px;margin:0;letter-spacing:.5px}
+h1 span{color:var(--acc)}
+.sub{color:var(--mut);margin:4px 0 18px}
+h2{font-size:20px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.num{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#111;font-weight:800;font-size:15px;flex:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin:16px 0}
+.help{background:var(--card2);border-left:3px solid var(--acc2);border-radius:8px;padding:10px 14px;margin:10px 0 14px;color:#cfd5df;font-size:14.5px}
+.help summary{cursor:pointer;color:var(--acc2);font-weight:600;list-style:none}
+.help summary::before{content:"ⓘ  "}
+.help ol,.help ul{margin:8px 0 2px;padding-left:20px}
+.help li{margin:3px 0}
+.help code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace;background:#0b0d11;padding:1px 5px;border-radius:4px;font-size:13.5px}
+textarea{width:100%;min-height:110px;background:#0b0d11;color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:12px;font:15px/1.6 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
+textarea:focus,input:focus,select:focus{outline:2px solid var(--acc2);outline-offset:1px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row+.row{margin-top:10px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mut)}
+input[type=number],input[type=text],input[type=password],select{background:#0b0d11;color:var(--tx);border:1px solid var(--line);border-radius:9px;padding:9px 10px;font-size:15px;min-height:42px}
+input[type=number]{width:96px}
+button,.btn{appearance:none;border:1px solid var(--line);background:var(--card2);color:var(--tx);border-radius:10px;padding:10px 14px;font-size:15px;font-weight:600;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+button:hover,.btn:hover{border-color:#3d4452;background:#252a35}
+button.pri{background:var(--acc);color:#141414;border-color:var(--acc)}
+button.pri:hover{filter:brightness(1.07)}
+button.big{font-size:18px;padding:14px 22px;min-height:54px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.chk{display:flex;align-items:center;gap:8px;font-size:14.5px;color:#cfd5df;cursor:pointer;min-height:36px}
+.chk input{width:18px;height:18px;accent-color:var(--acc)}
+.err{color:var(--bad);font-size:14px;margin-top:6px;min-height:1px}
+.ok{color:var(--ok)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.stat{background:var(--card2);border-radius:12px;padding:12px 14px}
+.stat .k{font-size:12.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
+.stat .v{font-size:20px;font-weight:700;margin-top:2px}
+.stat .d{font-size:13.5px;color:#c4cbd6;margin-top:4px}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tag{background:#2a2414;color:var(--acc);border:1px solid #4a3d1a;border-radius:20px;padding:2px 10px;font-size:13px}
+.genres{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+.gen{background:var(--card2);border:2px solid transparent;border-radius:12px;padding:12px;cursor:pointer;text-align:left;display:block;min-height:auto;font-weight:400}
+.gen.sel{border-color:var(--acc)}
+.gen b{font-size:17px}
+.bar{height:6px;background:#2a2f3a;border-radius:4px;margin:6px 0;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#ff8a3d)}
+.gen small{color:#bfc6d2;font-size:13px;display:block}
+canvas{width:100%;height:220px;background:#0b0d11;border-radius:10px;border:1px solid var(--line);display:block}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.chords{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chords span{background:#0b0d11;border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-family:ui-monospace,Menlo,monospace;font-size:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.tabs button{border-radius:20px;min-height:40px}
+.tabs button.on{background:var(--acc2);color:#081018;border-color:var(--acc2)}
+.prompt{background:#0b0d11;border:1px solid var(--line);border-radius:10px;padding:12px;font:14px/1.55 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word;margin:8px 0}
+.plabel{font-size:13px;color:var(--mut);margin-top:10px}
+.status{font-size:14px;color:var(--mut);min-height:20px;margin-top:8px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222833;border:1px solid var(--acc2);color:var(--tx);padding:10px 18px;border-radius:12px;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+.toast.on{opacity:1}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:flex-start;justify-content:center;z-index:40;overflow:auto;padding:30px 12px}
+.modal.on{display:flex}
+.modal .box{background:var(--card);border:1px solid var(--line);border-radius:16px;max-width:760px;width:100%;padding:22px}
+.modal h3{margin-top:0}
+.modal ol li{margin:6px 0}
+.hidden{display:none!important}
+.adv{margin-top:12px}
+.adv summary{cursor:pointer;color:var(--mut);font-size:14px}
+footer{color:var(--mut);font-size:13px;text-align:center;margin-top:30px}
+@media(max-width:560px){h1{font-size:23px}.card{padding:14px}button.big{width:100%;justify-content:center}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>НОТИ <span>→</span> МУЗИКА</h1>
+  <button id="btnGuide" type="button">📖 Посібник для новачка</button>
+</header>
+<p class="sub">Впиши ноти, і додаток визначить характер мелодії, підбере жанр, зробить аранжування в MIDI та зробить 5–8 варіантів треків: свої, Google Lyria, ElevenLabs, Suno, Udio, з урахуванням трендів 2026 року.</p>
+
+<!-- STEP 1 -->
+<section class="card" id="step1">
+  <h2><span class="num">1</span> Ноти</h2>
+  <details class="help" open>
+    <summary>Як вписати ноти</summary>
+    <ol>
+      <li>Пиши ноти через пробіл: латиницею <code>C4 D4 E4</code> або українською <code>до ре мі</code>.</li>
+      <li>Цифра після ноти означає октаву (<code>4</code> — перша октава, де «до» посередині клавіатури). Якщо цифру не писати, береться октава попередньої ноти.</li>
+      <li>Тривалість ставиться через скісну риску: <code>/1</code> ціла, <code>/2</code> половинна, <code>/4</code> четвертна, <code>/8</code> восьма, <code>/16</code> шістнадцята. Крапка в кінці робить ноту з крапкою: <code>C4/4.</code>. Без тривалості нота повторює тривалість попередньої (спочатку четвертна).</li>
+      <li>Дієз: <code>C#4</code> або <code>до#</code>. Бемоль: <code>Bb4</code>, <code>Eb4</code> або <code>мі♭</code>.</li>
+      <li>Пауза: <code>R/4</code> або <code>п/4</code>. Тактова риска <code>|</code> необов’язкова: вона потрібна лише для зручності.</li>
+      <li>Немає нот текстом? Натисни <b>«Імпорт MIDI»</b> (файл .mid) або <b>«Ноти з фото»</b> (сфотографований нотний лист розпізнає Gemini).</li>
+    </ol>
+  </details>
+  <textarea id="notes" spellcheck="false" aria-label="Ноти" placeholder="Наприклад: E4/4 E4 F4 G4 | G4 F4 E4 D4 | C4 C4 D4 E4 | E4/4. D4/8 D4/2"></textarea>
+  <div class="err" id="parseErr" role="alert"></div>
+  <div class="row">
+    <label class="f">Темп (уд./хв)
+      <input type="number" id="tempo" min="40" max="220" value="100">
+    </label>
+    <label class="f">Розмір
+      <select id="metre"><option value="4/4">4/4</option><option value="3/4">3/4 (вальс)</option><option value="6/8">6/8</option></select>
+    </label>
+    <label class="f">Приклад
+      <select id="example">
+        <option value="">— вибрати приклад —</option>
+        <option value="ode">Ода до радості (Бетховен)</option>
+        <option value="shchedryk">Щедрик (Леонтович), мотив</option>
+        <option value="sad">Сумна мелодія (ля мінор)</option>
+        <option value="blues">Блюзовий риф</option>
+        <option value="twinkle">Twinkle Twinkle (народна)</option>
+      </select>
+    </label>
+  </div>
+  <div class="row">
+    <label class="btn" for="midiFile" tabindex="0" id="btnMidiLabel">🎹 Імпорт MIDI</label>
+    <input type="file" id="midiFile" accept=".mid,.midi,audio/midi" class="hidden">
+    <button type="button" id="btnPhoto">📷 Ноти з фото</button>
+    <button type="button" id="btnClear">Очистити</button>
+  </div>
+  <div class="row hidden" id="trackPick">
+    <label class="f">У MIDI кілька доріжок. Вибери доріжку з мелодією:
+      <select id="trackSel"></select>
+    </label>
+  </div>
+  <div class="status" id="importStatus"></div>
+
+  <div id="photoBox" class="hidden" style="margin-top:12px">
+    <details class="help" open>
+      <summary>Як розпізнати ноти з фото</summary>
+      <ol>
+        <li><b>Найпростіше, без ключа:</b> натисни «Скопіювати промпт і відкрити AI Studio». У Google AI Studio встав промпт (Cmd+V), прикріпи фото нот (скріпка «+»), натисни Run. Скопіюй відповідь і встав у поле нот вище.</li>
+        <li><b>Автоматично:</b> встав свій безкоштовний Gemini API-ключ (AI Studio → «Get API key»), вибери фото і натисни «Розпізнати». Ключ зберігається тільки в цьому браузері.</li>
+        <li>Розпізнається верхній голос (мелодія). Обов’язково перевір результат на слух кнопкою «Слухати».</li>
+      </ol>
+    </details>
+    <div class="row">
+      <button type="button" id="btnAIStudioPrompt">📋 Скопіювати промпт і відкрити AI Studio</button>
+    </div>
+    <div class="row">
+      <label class="f">Gemini API-ключ<input type="password" id="gemKey" placeholder="AIza…" style="width:260px" autocomplete="off"></label>
+      <label class="f">Модель<input type="text" id="gemModel" value="gemini-flash-latest" style="width:190px"></label>
+      <label class="f">Фото нот<input type="file" id="photoFile" accept="image/*"></label>
+      <button type="button" id="btnRecognize">🔍 Розпізнати</button>
+    </div>
+    <div class="status" id="photoStatus"></div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <button type="button" class="pri big" id="btnGo">🎵 Перетворити на музику</button>
+  </div>
+</section>
+
+<!-- STEP 2 -->
+<section class="card" id="step2">
+  <h2><span class="num">2</span> Аналіз: характер, стиль, жанр</h2>
+  <details class="help">
+    <summary>Що тут показано і як це рахується</summary>
+    <ul>
+      <li><b>Тональність</b> визначається за алгоритмом Крумхансла: додаток порівнює, які ноти і як довго звучать, з профілями всіх 24 тональностей.</li>
+      <li><b>Характер</b> складається з ладу (мажор світліший, мінор сумніший), щільності ритму, стрибків, діапазону і синкоп.</li>
+      <li><b>Жанри</b> отримують оцінку за ознаками мелодії: пентатоніка тягне до фолку й року, «блюзові» ноти до блюзу, синкопи до джазу й хіп-хопу, широкий діапазон і повільний рух до кіномузики.</li>
+      <li>Натисни на картку жанру, щоб вибрати його для аранжування. Можна вибрати будь-який жанр зі списку на кроці 3, навіть якщо його нема в топі.</li>
+    </ul>
+  </details>
+  <div id="analysisEmpty" class="status">Тут з’явиться аналіз, щойно ти впишеш ноти.</div>
+  <div id="analysis" class="hidden">
+    <div class="grid">
+      <div class="stat"><div class="k">Тональність</div><div class="v" id="aKey">—</div><div class="d" id="aKeyD"></div></div>
+      <div class="stat"><div class="k">Характер</div><div class="v" id="aMood">—</div><div class="tags" id="aTags"></div></div>
+      <div class="stat"><div class="k">Мелодія</div><div class="v" id="aMel">—</div><div class="d" id="aMelD"></div></div>
+    </div>
+    <p id="aText" style="color:#cfd5df;margin:14px 0 0"></p>
+    <div class="plabel">Найкращі жанри для цих нот (натисни, щоб вибрати):</div>
+    <div class="genres" id="aGenres"></div>
+  </div>
+</section>
+
+<!-- STEP 3 -->
+<section class="card" id="step3">
+  <h2><span class="num">3</span> Аранжування і MIDI</h2>
+  <details class="help">
+    <summary>Як слухати і що лежить у MIDI-файлі</summary>
+    <ol>
+      <li>Вибери жанр (або залиш рекомендований) і натисни <b>«▶ Слухати»</b>. Перший запуск займає 1–3 секунди, бо звук генерується в браузері.</li>
+      <li>Мелодія лишається твоєю нота в ноту. Додаток дописує акорди, бас, барабани й підкладку в стилі жанру.</li>
+      <li><b>«⬇ MIDI»</b> завантажує файл, де все прописано окремими доріжками: Melody, Chords, Bass, Pad, Drums. У файлі є темп, розмір, тональність і назви акордів (маркери). Його відкривають Logic, GarageBand, Ableton, FL Studio, Cubase, MuseScore.</li>
+      <li><b>«⬇ WAV»</b> завантажує аудіо цього аранжування. Саме його завантажуй у Suno (крок 4), щоб він зберіг твою мелодію.</li>
+      <li>У «Налаштуваннях» можна змінити кількість повторів, вступ, свінг, частоту акордів і транспонування.</li>
+    </ol>
+  </details>
+  <div class="row">
+    <label class="f">Жанр аранжування<select id="genreSel"></select></label>
+    <label class="chk"><input type="checkbox" id="fitTempo" checked> Підлаштувати темп під жанр</label>
+    <label class="chk"><input type="checkbox" id="trend" checked> 🔥 Трендовий звук 2026</label>
+  </div>
+  <div class="help" id="trendInfo" style="margin-top:10px"></div>
+  <details class="adv">
+    <summary>⚙ Налаштування аранжування</summary>
+    <div class="help" style="margin-top:8px">Повтори подовжують трек (для Suno краще 20 с і довше). У другому повторі аранжування стає повнішим. Свінг дає «джазову» розгойдану ритміку. Транспонування зсуває все на півтони, якщо мелодія зависока чи занизька.</div>
+    <div class="row">
+      <label class="f">Повторів мелодії<select id="reps"><option value="0">Авто (≥ 20 с)</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
+      <label class="f">Акорди<select id="chordRate"><option value="1">раз на такт</option><option value="2">двічі на такт</option></select></label>
+      <label class="f">Транспонування<select id="transpose"></select></label>
+      <label class="chk"><input type="checkbox" id="intro" checked> Вступ (1 такт)</label>
+      <label class="chk"><input type="checkbox" id="swing"> Свінг завжди (у джазі, блюзі та lo-fi вмикається сам)</label>
+    </div>
+  </details>
+  <div class="row" style="margin-top:14px">
+    <button type="button" class="pri" id="btnPlay" disabled>▶ Слухати</button>
+    <button type="button" id="btnStop" disabled>■ Стоп</button>
+    <button type="button" id="btnMidi" disabled>⬇ MIDI</button>
+    <button type="button" id="btnWav" disabled>⬇ WAV</button>
+  </div>
+  <div class="status" id="playStatus"></div>
+  <canvas id="roll" width="1000" height="220" aria-label="Піано-рол аранжування"></canvas>
+  <div class="legend"><span><i style="background:#f5b942"></i>Мелодія</span><span><i style="background:#5ec4ff"></i>Акорди</span><span><i style="background:#5fd38d"></i>Бас</span><span><i style="background:#b38cff"></i>Підкладка</span><span><i style="background:#ff6b6b"></i>Барабани</span></div>
+  <div class="chords" id="chords"></div>
+</section>
+
+<!-- VARIANTS -->
+<section class="card" id="stepV">
+  <h2><span class="num">4</span> Варіанти: 5–8 треків з різних джерел</h2>
+  <details class="help" open>
+    <summary>Як отримати кілька варіантів одним натиском</summary>
+    <ol>
+      <li>Натисни <b>«🎛 Створити всі варіанти»</b>. Додаток зробить 4 власні аранжування: три найкращі жанри для твоїх нот і «трендову» версію в одному з найпопулярніших жанрів 2026 року, який пасує до мелодії.</li>
+      <li>Якщо внизу вставлено ключі, з’являться ще треки від <b>Google Lyria</b> і <b>ElevenLabs</b>. Вони генеруються автоматично за 20–90 секунд.</li>
+      <li><b>Suno</b> і <b>Udio</b> не мають відкритого API. Для них у картці є готовий WAV і промпт, а Claude може зробити ці варіанти сам у твоєму акаунті через браузер.</li>
+      <li>Кожен варіант можна послухати й завантажити (WAV / MIDI / MP3). Порівняй і вибери найкращий.</li>
+    </ol>
+  </details>
+  <div class="row">
+    <button type="button" class="pri big" id="btnVariants" disabled>🎛 Створити всі варіанти</button>
+  </div>
+  <div class="status" id="varStatus"></div>
+  <div id="variants" class="genres" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))"></div>
+
+  <details class="adv" id="keysBox">
+    <summary>🔑 Ключі AI-сервісів (для автоматичних треків Lyria та ElevenLabs, а також живих трендів)</summary>
+    <div class="help" style="margin-top:8px"><ol>
+      <li><b>Gemini / Lyria (Google):</b> зайди на aistudio.google.com → «Get API key» → «Create API key» → скопіюй ключ (починається з <code>AIza</code>) і встав нижче. Цей самий ключ працює для «Ноти з фото» і «Живих трендів». Для музики Lyria Google може вимагати платний (білінговий) ключ: якщо побачиш помилку про billing/quota, увімкни оплату в AI Studio.</li>
+      <li><b>ElevenLabs:</b> elevenlabs.io → профіль (ліворуч унизу) → «API Keys» → «Create» → дозволи Music → скопіюй ключ і встав нижче. Генерація витрачає кредити твого тарифу.</li>
+      <li>Ключі зберігаються лише в цьому браузері на цьому пристрої й ніде не публікуються.</li>
+    </ol></div>
+    <div class="row">
+      <label class="f">Gemini API-ключ<input type="password" id="gemKey2" placeholder="AIza…" style="width:260px" autocomplete="off"></label>
+      <label class="f">Модель Lyria<select id="lyriaModel"><option value="lyria-3.5">lyria-3.5 (повна пісня)</option><option value="lyria-3-pro-preview">lyria-3-pro-preview</option><option value="lyria-3-clip-preview">lyria-3-clip-preview (30 с)</option></select></label>
+    </div>
+    <div class="row">
+      <label class="f">ElevenLabs API-ключ<input type="password" id="elKey" placeholder="sk_…" style="width:260px" autocomplete="off"></label>
+      <label class="f">Модель ElevenLabs<select id="elModel"><option value="music_v1">music_v1</option><option value="music_v2">music_v2</option><option value="music_v2_5">music_v2_5</option></select></label>
+      <label class="f">Тривалість, с<input type="number" id="elLen" min="10" max="300" value="60"></label>
+    </div>
+  </details>
+  <div class="row" style="margin-top:12px">
+    <button type="button" id="btnLiveTrends">🔎 Живі тренди з Google (Gemini + Пошук)</button>
+  </div>
+  <div class="help hidden" id="liveTrendBox"></div>
+</section>
+
+<!-- STEP 4 -->
+<section class="card" id="step4">
+  <h2><span class="num">5</span> Живе звучання в AI вручну</h2>
+  <details class="help" open>
+    <summary>Який сервіс вибрати</summary>
+    <ul>
+      <li><b>Suno</b> найкраще зберігає твою мелодію, бо отримує аудіо (WAV із кроку 3) і робить з нього «кавер» у вибраному стилі.</li>
+      <li><b>ElevenLabs Music</b> і <b>Google AI Studio (Lyria)</b> приймають лише текст. Вони створять трек «за мотивами»: та сама тональність, темп, характер і жанр, але мелодія буде їхня.</li>
+      <li>Промпти англійською, бо так ці сервіси працюють найточніше. Їх можна редагувати після копіювання.</li>
+    </ul>
+  </details>
+  <div class="tabs" role="tablist">
+    <button type="button" class="on" data-tab="suno">Suno</button>
+    <button type="button" data-tab="eleven">ElevenLabs</button>
+    <button type="button" data-tab="lyria">Google AI Studio (Lyria)</button>
+  </div>
+  <div id="tab-suno">
+    <div class="help"><b>Покроково:</b><ol>
+      <li>На кроці 3 натисни «⬇ WAV» і збережи файл.</li>
+      <li>Натисни «Відкрити Suno» → <b>Create</b> → кнопка <b>«+ Audio»</b> (Upload) → вибери WAV.</li>
+      <li>Після завантаження вибери <b>Cover</b> (перекладає твою мелодію в новий стиль).</li>
+      <li>Натисни «Копіювати стиль» і встав у поле <b>Styles</b>. У поле Lyrics встав <code>[Instrumental]</code>, якщо потрібна музика без співу.</li>
+      <li>Натисни <b>Create</b>. Suno зробить 2 варіанти: обери кращий.</li>
+    </ol></div>
+    <div class="plabel">Стиль (Styles):</div>
+    <div class="prompt" id="pSuno">—</div>
+    <div class="row">
+      <button type="button" data-copy="pSuno">📋 Копіювати стиль</button>
+      <a class="btn" href="https://suno.com/create" target="_blank" rel="noopener">Відкрити Suno ↗</a>
+    </div>
+  </div>
+  <div id="tab-eleven" class="hidden">
+    <div class="help"><b>Покроково:</b><ol>
+      <li>Натисни «Копіювати промпт».</li>
+      <li>Натисни «Відкрити ElevenLabs Music» і встав промпт у поле опису.</li>
+      <li>За потреби вибери тривалість, потім натисни <b>Generate</b>.</li>
+      <li>Мелодія буде нова, але настрій, темп, тональність і жанр відповідатимуть твоїм нотам. Ноти й акорди вписані в промпт як орієнтир.</li>
+    </ol></div>
+    <div class="prompt" id="pEleven">—</div>
+    <div class="row">
+      <button type="button" data-copy="pEleven">📋 Копіювати промпт</button>
+      <a class="btn" href="https://elevenlabs.io/app/music" target="_blank" rel="noopener">Відкрити ElevenLabs Music ↗</a>
+    </div>
+  </div>
+  <div id="tab-lyria" class="hidden">
+    <div class="help"><b>Покроково:</b><ol>
+      <li>Натисни «Копіювати промпт».</li>
+      <li>Натисни «Відкрити AI Studio» → вибери модель <b>Lyria</b> (розділ Music / генерація музики).</li>
+      <li>Встав промпт і запусти. Lyria 3 Pro робить треки приблизно до 3 хвилин.</li>
+      <li>Lyria не приймає ноти чи MIDI, тому результат буде «за мотивами»: той самий настрій, темп і жанр.</li>
+    </ol></div>
+    <div class="prompt" id="pLyria">—</div>
+    <div class="row">
+      <button type="button" data-copy="pLyria">📋 Копіювати промпт</button>
+      <a class="btn" href="https://aistudio.google.com/" target="_blank" rel="noopener">Відкрити AI Studio ↗</a>
+    </div>
+  </div>
+</section>
+
+<footer>НОТИ → МУЗИКА · TO BE PRODUCTION · Юрій Грім</footer>
+</div>
+
+<div class="modal" id="guide" role="dialog" aria-modal="true" aria-labelledby="gTitle">
+  <div class="box">
+    <h3 id="gTitle">📖 Посібник для нового користувача</h3>
+    <p>Додаток перетворює ноти на готове аранжування і допомагає озвучити його в AI-сервісах. Нічого встановлювати не треба: все працює в браузері, і на телефоні теж.</p>
+    <ol>
+      <li><b>Внеси ноти.</b> Є три способи: надрукувати (<code>C4 D4 E4</code> або <code>до ре мі</code>), завантажити MIDI-файл або розпізнати фото нотного листа через Gemini. Щоб спробувати, вибери будь-який приклад.</li>
+      <li><b>Подивись аналіз.</b> Додаток покаже тональність, характер (сумний, енергійний, урочистий…) і три жанри, які найкраще пасують до мелодії.</li>
+      <li><b>Послухай аранжування.</b> Вибери жанр і натисни «▶ Слухати». Мелодія лишається твоєю, а акорди, бас, барабани й підкладку додаток пише сам.</li>
+      <li><b>Забери файли.</b> «⬇ MIDI» потрібен для музичних програм (Logic, Ableton, FL Studio, GarageBand, MuseScore), «⬇ WAV» для AI-сервісів.</li>
+      <li><b>Отримай 5–8 варіантів.</b> На кроці 4 кнопка «🎛 Створити всі варіанти» робить кілька власних аранжувань, зокрема трендове, а з ключами ще й треки Google Lyria та ElevenLabs. Для Suno й Udio там є готовий WAV і стиль.</li>
+      <li><b>Тренди.</b> Галочка «🔥 Трендовий звук 2026» підлаштовує темп і саунд під те, що зараз найбільше слухають. Кнопка «Живі тренди з Google» бере найсвіжіші дані через Gemini з пошуком.</li>
+      <li><b>Вручну в AI.</b> На кроці 5 є готові промпти й покрокові інструкції для Suno, ElevenLabs і Google AI Studio.</li>
+    </ol>
+    <p><b>Порада:</b> якщо результат звучить не так, як хотілося, спробуй інший жанр або зміни темп. Аналіз і аранжування оновлюються миттєво.</p>
+    <p><b>Конфіденційність:</b> ноти нікуди не надсилаються. Gemini отримує тільки фото, яке ти сам вибереш для розпізнавання.</p>
+    <button type="button" class="pri" id="btnGuideClose">Зрозуміло, почати</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ================= helpers ================= */
+const $=id=>document.getElementById(id);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),2200);}
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+/* ================= note names ================= */
+const SHARP=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const FLAT=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const UA_SHARP=['до','до-дієз','ре','ре-дієз','мі','фа','фа-дієз','соль','соль-дієз','ля','ля-дієз','сі'];
+const UA_FLAT=['до','ре-бемоль','ре','мі-бемоль','мі','фа','соль-бемоль','соль','ля-бемоль','ля','сі-бемоль','сі'];
+function usesFlats(tonic,mode){return mode==='major'?[5,10,3,8,1,6].includes(tonic):[2,7,0,5,10,3].includes(tonic);}
+function pcName(pc,flats){return (flats?FLAT:SHARP)[((pc%12)+12)%12];}
+function midiName(m,flats){return pcName(m,flats)+(Math.floor(m/12)-1);}
+
+/* ================= parser ================= */
+const NAME_MAP={c:0,d:2,e:4,f:5,g:7,a:9,b:11,h:11,'до':0,'ре':2,'мі':4,'ми':4,'фа':5,'соль':7,'сол':7,'ля':9,'сі':11,'си':11,'do':0,'re':2,'mi':4,'fa':5,'sol':7,'so':7,'la':9,'si':11,'ti':11};
+const NOTE_RE=/^(соль|сол|до|ре|мі|ми|фа|ля|сі|си|sol|do|re|mi|fa|la|si|ti|so|[a-h])(##|#|♯|bb|b|♭|-дієз|дієз|-бемоль|бемоль)?(-?\d)?(?:\/(1|2|4|8|16|32))?(\.)?$/;
+const REST_RE=/^(r|п|пауза|-|_)(?:\/(1|2|4|8|16|32))?(\.)?$/;
+function parseNotes(text){
+  const notes=[];const errors=[];let t=0,oct=4,dur=1;
+  const toks=text.replace(/[,;]/g,' ').split(/\s+/).filter(Boolean);
+  for(const raw of toks){
+    if(raw==='|'||raw==='||')continue;
+    const tok=raw.toLowerCase().replace(/\|/g,'');
+    if(!tok)continue;
+    let m=tok.match(REST_RE);
+    if(m){ if(m[2])dur=4/parseInt(m[2]); let d=dur*(m[3]?1.5:1); t+=d; if(!m[2]&&m[3])dur=dur; continue; }
+    m=tok.match(NOTE_RE);
+    if(!m){errors.push(raw);continue;}
+    let pc=NAME_MAP[m[1]];
+    const acc=m[2]||'';
+    if(acc==='#'||acc==='♯'||acc.includes('дієз'))pc+=1;
+    else if(acc==='##')pc+=2;
+    else if(acc==='b'||acc==='♭'||acc.includes('бемоль'))pc-=1;
+    else if(acc==='bb')pc-=2;
+    if(m[3]!==undefined)oct=parseInt(m[3]);
+    if(m[4])dur=4/parseInt(m[4]);
+    const d=dur*(m[5]?1.5:1);
+    const midi=12*(oct+1)+pc;
+    if(midi<12||midi>120){errors.push(raw);continue;}
+    notes.push({p:midi,s:t,d});t+=d;
+  }
+  return {notes,errors,total:t};
+}
+function beatsToDurTok(d){
+  const table=[[4,'/1'],[3,'/2.'],[2,'/2'],[1.5,'/4.'],[1,'/4'],[0.75,'/8.'],[0.5,'/8'],[0.375,'/16.'],[0.25,'/16'],[0.125,'/32']];
+  let best=table[0],bd=1e9;for(const r of table){const e=Math.abs(r[0]-d);if(e<bd){bd=e;best=r}}return best;
+}
+function restTokens(g){const out=[];const vals=[[4,'/1'],[2,'/2'],[1,'/4'],[0.5,'/8'],[0.25,'/16']];let left=g;
+  for(const [v,s] of vals){while(left>=v-1e-6){out.push('R'+s);left-=v}}return out;}
+function notesToText(notes,bpb){
+  const out=[];let t=0,bar=0;
+  for(const n of notes){
+    if(n.s>t+0.01){out.push(...restTokens(n.s-t));t=n.s;}
+    const [v,s]=beatsToDurTok(n.d);
+    const nb=Math.floor(t/bpb+1e-6);if(nb>bar&&out.length){out.push('|');bar=nb;}
+    out.push(midiName(n.p,false)+s);t+=v;
+  }
+  return out.join(' ');
+}
+
+/* ================= analysis ================= */
+const KS_MAJ=[6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88];
+const KS_MIN=[6.33,2.68,3.52,5.38,2.60,3.53,2.54,4.75,3.98,2.69,3.34,3.17];
+function corr(a,b){const n=a.length;const ma=a.reduce((x,y)=>x+y)/n,mb=b.reduce((x,y)=>x+y)/n;let sx=0,sa=0,sb=0;for(let i=0;i<n;i++){sx+=(a[i]-ma)*(b[i]-mb);sa+=(a[i]-ma)**2;sb+=(b[i]-mb)**2}return sa&&sb?sx/Math.sqrt(sa*sb):0;}
+function detectKey(notes){
+  const h=new Array(12).fill(0);notes.forEach(n=>h[n.p%12]+=n.d);
+  if(notes.length){h[notes[notes.length-1].p%12]+=1.2;h[notes[0].p%12]+=0.4;}
+  let best={r:-2};const all=[];
+  for(let t=0;t<12;t++){
+    for(const [mode,prof] of [['major',KS_MAJ],['minor',KS_MIN]]){
+      const rot=prof.map((_,i)=>prof[(i-t+12)%12]);const r=corr(h,rot);all.push({tonic:t,mode,r});if(r>best.r)best={tonic:t,mode,r};
+    }
+  }
+  all.sort((a,b)=>b.r-a.r);
+  return {...best,second:all[1],hist:h};
+}
+const SCALE={major:[0,2,4,5,7,9,11],minor:[0,2,3,5,7,8,10,11]};
+function analyze(notes,total,bpb,tempo){
+  const key=detectKey(notes);const {tonic,mode}=key;
+  const ps=notes.map(n=>n.p);const lo=Math.min(...ps),hi=Math.max(...ps);const range=hi-lo;
+  const ints=[];for(let i=1;i<notes.length;i++)ints.push(Math.abs(notes[i].p-notes[i-1].p));
+  const ni=Math.max(1,ints.length);
+  const step=ints.filter(x=>x>0&&x<=2).length/ni, leap=ints.filter(x=>x>=5).length/ni, rep=ints.filter(x=>x===0).length/ni;
+  const density=notes.length/Math.max(1,total);
+  const shortR=notes.filter(n=>n.d<=0.5).length/notes.length;
+  const longR=notes.filter(n=>n.d>=2).length/notes.length;
+  let sync=0;notes.forEach(n=>{const f=n.s%1;if(f>0.01&&f<0.99&&(n.d>=0.75||(f+n.d)>1.01))sync++;});sync/=notes.length;
+  const tot=notes.reduce((a,n)=>a+n.d,0);
+  const scale=SCALE[mode];const chrom=notes.filter(n=>!scale.includes((n.p-tonic+12)%12)).reduce((a,n)=>a+n.d,0)/tot;
+  const pcsRel=[...new Set(notes.map(n=>(n.p-tonic+12)%12))];
+  const pentaSet=mode==='major'?[0,2,4,7,9]:[0,3,5,7,10];
+  const penta=pcsRel.length>=3&&pcsRel.every(x=>pentaSet.includes(x))?1:(pcsRel.filter(x=>pentaSet.includes(x)).length/pcsRel.length>0.85?0.5:0);
+  const blue=mode==='major'?(pcsRel.includes(3)||pcsRel.includes(10)?(pcsRel.includes(3)&&pcsRel.includes(10)?1:0.6):0)+(pcsRel.includes(6)?0.4:0):(pcsRel.includes(6)?0.8:0)+(pcsRel.includes(10)&&pcsRel.includes(3)?0.3:0);
+  const mean=ps.reduce((a,b)=>a+b,0)/ps.length;
+  let sx=0,sy=0,sxy=0,sxx=0;notes.forEach(n=>{sx+=n.s;sy+=n.p;sxy+=n.s*n.p;sxx+=n.s*n.s});const N=notes.length;
+  const slope=N>1&&(N*sxx-sx*sx)?(N*sxy-sx*sy)/(N*sxx-sx*sx):0;
+  const triple=bpb===3?1:0;
+  const tempoF=clamp((tempo-60)/100,0,1);
+  const energy=clamp(density*0.28+shortR*0.3+leap*0.25+sync*0.3+tempoF*0.35-longR*0.2,0,1);
+  const B=mode==='major'?1:0;
+  const tension=clamp(chrom*2.5+leap*0.3+(1-B)*0.2,0,1);
+  const wide=clamp((range-5)/19,0,1);
+  const F={energy,B,tension,sync:clamp(sync*3,0,1),penta,blue:clamp(blue,0,1),triple,wide,step,rep,longR,density,shortR,leap,chrom,range,mean,slope,lo,hi};
+
+  // character
+  let mood,moodEn;
+  if(B&&energy>=0.55){mood='Радісний, енергійний';moodEn='joyful, energetic';}
+  else if(B&&energy<0.35){mood='Світлий, ліричний';moodEn='warm, lyrical, tender';}
+  else if(B){mood='Світлий, натхненний';moodEn='bright, hopeful, uplifting';}
+  else if(energy>=0.55){mood='Драматичний, напружений';moodEn='dramatic, intense';}
+  else if(energy<0.35){mood='Сумний, задумливий';moodEn='melancholic, reflective';}
+  else {mood='Мінорний, схвильований';moodEn='bittersweet, emotional';}
+  const tags=[];const tagsEn=[];
+  if(tension>0.45){tags.push('таємничий');tagsEn.push('mysterious');}
+  if(triple){tags.push('вальсовий');tagsEn.push('waltz-like');}
+  if(F.sync>0.35){tags.push('грайливий ритм');tagsEn.push('playful syncopated rhythm');}
+  if(wide>0.6&&leap>0.15){tags.push('епічний розмах');tagsEn.push('epic, wide');}
+  if(penta>=1){tags.push('народний колорит');tagsEn.push('folk flavour');}
+  if(F.blue>=0.6){tags.push('блюзовий відтінок');tagsEn.push('bluesy');}
+  if(longR>0.35){tags.push('протяжний');tagsEn.push('sustained, flowing');}
+  if(rep>0.3){tags.push('ритмічний, повторюваний');tagsEn.push('repetitive, hooky');}
+  if(step>0.6){tags.push('плавний, співучий');tagsEn.push('smooth, singable');}
+  if(slope>0.4){tags.push('висхідний, наростання');tagsEn.push('rising');} else if(slope<-0.4){tags.push('спадний');tagsEn.push('descending');}
+  if(B&&energy>0.4&&range>=7&&!tags.length){tags.push('урочистий');tagsEn.push('triumphant');}
+
+  // genres
+  const mid=x=>1-Math.abs(x-0.5)*2;
+  const G={
+    pop:0.35+0.25*B+0.3*mid(energy)+0.2*rep+0.15*step,
+    ballad:0.7*(1-energy)+0.25*step+0.2*wide+0.1*longR,
+    rock:0.6*energy+0.15*(1-B)+0.2*rep+0.25*(penta>=0.5?1:0)+0.15*F.blue,
+    jazz:0.55*F.sync+0.45*tension+0.2*F.blue+0.15*mid(energy)+0.1*chrom*3,
+    blues:0.8*F.blue+0.25*(penta>=0.5?1:0)+0.2*F.sync,
+    folk:0.45*penta+0.25*(1-B)+0.25*step+0.25*triple+0.1*rep,
+    cinematic:0.5*wide+0.25*(1-energy)+0.2*(1-B)+0.2*tension+0.2*longR,
+    lofi:0.4*(1-energy)+0.25*F.sync+0.2*tension+0.15,
+    edm:0.6*energy+0.35*rep+0.1*B-0.2*triple,
+    waltz:0.85*triple+0.25*step+0.1*B,
+    ambient:0.55*(1-energy)+0.45*longR+0.1*(1-F.sync),
+    hiphop:0.35*F.sync+0.3*rep+0.2*(1-B)+0.15*mid(energy)-0.3*triple,
+    latin:0.35*F.sync+0.25*rep+0.25*mid(energy)+0.1*(1-B)-0.4*triple,
+    country:0.3*B+0.3*step+0.25*mid(energy)+0.15*(penta>=0.5?1:0)
+  };
+  const ranked=Object.entries(G).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
+  const mx=ranked[0].v;
+  ranked.forEach(r=>{r.pct=Math.round(clamp(r.v/mx,0,1)*100);r.why=genreWhy(r.k,F)});
+  return {key,F,mood,moodEn,tags,tagsEn,ranked};
+}
+function genreWhy(k,F){
+  const w=[];
+  const add=(c,s)=>{if(c)w.push(s)};
+  switch(k){
+    case 'pop':add(F.B,'мажор');add(F.rep>0.2,'повтори-«гачки»');add(F.step>0.5,'співуча');add(true,'помірна енергія');break;
+    case 'ballad':add(F.energy<0.4,'спокійний рух');add(F.step>0.5,'плавна лінія');add(F.wide>0.4,'широкий діапазон');break;
+    case 'rock':add(F.energy>0.5,'енергія');add(F.penta>=0.5,'пентатоніка');add(F.rep>0.2,'риф-повтори');add(!F.B,'мінор');break;
+    case 'jazz':add(F.sync>0.3,'синкопи');add(F.tension>0.4,'хроматизми');add(F.blue>0.3,'блюзові ноти');break;
+    case 'blues':add(F.blue>0.3,'блюзові ноти');add(F.penta>=0.5,'пентатоніка');add(F.sync>0.3,'свінгові синкопи');break;
+    case 'folk':add(F.penta>=0.5,'пентатоніка');add(!F.B,'мінорний лад');add(F.step>0.5,'поступенний рух');add(F.triple,'тридольність');break;
+    case 'cinematic':add(F.wide>0.4,'широкий діапазон');add(F.longR>0.2,'довгі ноти');add(F.tension>0.35,'напруга');add(!F.B,'мінор');break;
+    case 'lofi':add(F.energy<0.5,'неспішність');add(F.sync>0.2,'розслаблений ритм');break;
+    case 'edm':add(F.energy>0.5,'драйв');add(F.rep>0.2,'повтори');break;
+    case 'waltz':add(F.triple,'розмір 3/4');add(F.step>0.5,'плавність');break;
+    case 'ambient':add(F.energy<0.4,'мало руху');add(F.longR>0.2,'тягучі ноти');break;
+    case 'hiphop':add(F.sync>0.2,'синкопи');add(F.rep>0.2,'повтори');add(!F.B,'мінор');break;
+    case 'latin':add(F.sync>0.2,'синкопи');add(F.rep>0.2,'повтори-хуки');add(true,'танцювальна енергія');break;
+    case 'country':add(F.B,'мажор');add(F.step>0.5,'співуча лінія');add(F.penta>=0.5,'пентатоніка');break;
+  }
+  return w.length?w.join(', '):'загальна відповідність';
+}
+
+/* ================= genres / arrangement ================= */
+const GENRES={
+  pop:{n:'Поп',en:'modern pop',t:[96,124],mel:['epiano',4],ch:['piano',0,'pop'],bass:['bass',33,'pop'],pad:['pad',89],dr:'pop',inst:'electric piano, piano, bass, punchy drums, warm synth pad',sev:false},
+  ballad:{n:'Балада',en:'emotional piano ballad',t:[64,84],mel:['piano',0],ch:['strings',48,'block'],bass:['acbass',32,'root'],pad:null,dr:'ballad',inst:'grand piano, string ensemble, soft drums',sev:false},
+  rock:{n:'Рок',en:'rock',t:[112,144],mel:['dist',29],ch:['dist',30,'power'],bass:['bass',34,'root8'],pad:null,dr:'rock',inst:'overdriven electric guitars, bass guitar, live rock drums',sev:false,power:true},
+  jazz:{n:'Джаз',en:'jazz, swing',t:[110,160],mel:['sax',66],ch:['piano',0,'jazz'],bass:['acbass',32,'walk'],pad:null,dr:'jazz',inst:'tenor saxophone, jazz piano trio, walking upright bass, brushed ride cymbal',sev:'jazz',swing:true},
+  blues:{n:'Блюз',en:'blues shuffle',t:[78,104],mel:['guitar',27],ch:['organ',16,'jazz'],bass:['bass',33,'walk'],pad:null,dr:'shuffle',inst:'clean electric blues guitar, Hammond organ, bass, shuffle drums',sev:'blues',swing:true},
+  folk:{n:'Український фолк',en:'Ukrainian folk, ethnic',t:[84,116],mel:['flute',73],ch:['guitar',24,'strum'],bass:['acbass',32,'root5'],pad:['strings',48],dr:'folk',inst:'sopilka-like wooden flute, acoustic guitar, bandura-style plucked strings, frame drum, tambourine',sev:false},
+  cinematic:{n:'Кіно / оркестр',en:'cinematic orchestral, epic film score',t:[66,96],mel:['horn',60],ch:['strings',48,'block'],bass:['strings',43,'root'],pad:['pad',89],dr:'cine',inst:'french horns, full string orchestra, contrabass, taiko and timpani, choir pad',sev:false},
+  lofi:{n:'Lo-fi',en:'lo-fi hip hop, chill',t:[70,88],mel:['epiano',4],ch:['epiano',4,'block'],bass:['bass',33,'sub'],pad:null,dr:'lofi',inst:'dusty rhodes piano, mellow bass, vinyl crackle, laid-back boom bap drums',sev:'jazz',swing:true},
+  edm:{n:'EDM / електроніка',en:'EDM, electronic dance',t:[120,128],mel:['saw',81],ch:['saw',81,'offbeat'],bass:['subbass',38,'root8'],pad:['pad',90],dr:'edm',inst:'supersaw lead, synth stabs, sidechained pads, sub bass, four-on-the-floor kick',sev:false},
+  waltz:{n:'Вальс / класика',en:'classical waltz',t:[120,170],mel:['violin',40],ch:['piano',0,'waltz'],bass:['acbass',32,'root1'],pad:['strings',48],dr:'waltz',inst:'violin, piano, string section',sev:false},
+  ambient:{n:'Ембієнт',en:'ambient, atmospheric',t:[60,80],mel:['bell',11],ch:['pad',89,'block'],bass:['subbass',38,'root1'],pad:['strings',49],dr:null,inst:'soft vibraphone, evolving warm pads, airy strings, deep sub',sev:false},
+  hiphop:{n:'Хіп-хоп / R&B',en:'hip hop / R&B beat',t:[84,98],mel:['epiano',4],ch:['piano',0,'block'],bass:['subbass',38,'sub'],pad:null,dr:'hiphop',inst:'piano loop, 808 sub bass, crisp boom bap drums',sev:false},
+  latin:{n:'Латина / реггетон',en:'reggaeton, latin pop',t:[88,100],mel:['pluck',24],ch:['epiano',4,'offbeat'],bass:['subbass',38,'sub'],pad:['pad',89],dr:'dembow',inst:'plucked nylon guitar, marimba-like plucks, dembow drums, deep 808 bass',sev:false},
+  country:{n:'Кантрі-поп',en:'modern country pop',t:[92,112],mel:['guitar',25],ch:['guitar',25,'strum'],bass:['bass',33,'root5'],pad:['strings',48],dr:'pop',inst:'steel-string acoustic guitar, slide guitar, warm bass, live drums',sev:false}
+};
+/* Трендова база: що найбільше слухають (Luminate Midyear 2026 + стрімінгові чарти). pop:вага популярності 0..1 */
+const TRENDS={
+  hiphop:{pop:1.0,sweet:[88,96],sound:'punchy 808s, crisp hi-hats, warm vocal-chop textures',ua:'R&B/хіп-хоп: найбільший жанр у США, майже кожен 4-й стрім. Щільні 808, чіткі хети.'},
+  rock:{pop:0.85,sweet:[112,132],sound:'modern big drums, layered guitars, arena feel',ua:'Рок: другий за стрімами у США. Великі барабани, нашаровані гітари.'},
+  pop:{pop:0.8,sweet:[100,120],sound:'clean modern pop production, catchy hook, bright synths, tight low end',ua:'Поп: короткі хук-структури, яскраві синти, щільний низ.'},
+  country:{pop:0.75,sweet:[96,108],sound:'laid-back country pop, acoustic guitars, roomy drums',ua:'Кантрі: один із жанрів, що найшвидше ростуть у 2026 році. Розслаблений груув і акустичні гітари.'},
+  latin:{pop:0.75,sweet:[90,98],sound:'dembow groove, latin percussion, deep bass, summer vibe',ua:'Латина: рекордні глобальні стріми у 2026 році. Груув дембоу, перкусія.'},
+  edm:{pop:0.55,sweet:[122,126],sound:'festival-ready drops, sidechain pads, wide supersaws',ua:'Електроніка: дропи, сайдчейн, широкі синти.'},
+  lofi:{pop:0.5,sweet:[72,84],sound:'dusty, warm, tape-saturated, relaxed swing',ua:'Lo-fi: фонова музика для навчання й роботи, теплий «запилений» звук.'},
+  cinematic:{pop:0.45,sweet:[70,90],sound:'hybrid orchestral, modern trailer percussion, big reverbs',ua:'Кіно: гібридний оркестр, трейлерна перкусія.'},
+  ballad:{pop:0.5,sweet:[66,78],sound:'intimate piano, emotional strings, close mic warmth',ua:'Балада: інтимне фортепіано і струнні.'},
+  folk:{pop:0.4,sweet:[90,110],sound:'authentic ethnic instruments mixed with modern production (ethno-pop)',ua:'Етно-фолк: автентичні інструменти з сучасним продакшном (як в етно-попі).'},
+  jazz:{pop:0.3,sweet:[110,150],sound:'warm live room, brushed drums, upright bass',ua:'Джаз: «живий» зал, щітки, контрабас.'},
+  blues:{pop:0.25,sweet:[80,96],sound:'gritty guitar tone, shuffle groove',ua:'Блюз: «брудний» тон гітари, шафл.'},
+  waltz:{pop:0.2,sweet:[130,160],sound:'elegant chamber strings and piano',ua:'Вальс: камерні струнні та фортепіано.'},
+  ambient:{pop:0.35,sweet:[60,75],sound:'evolving textures, long reverb tails',ua:'Ембієнт: текстури, що повільно змінюються.'}
+};
+const MAJ_C=[{r:0,q:'maj',w:1},{r:2,q:'min',w:.55},{r:4,q:'min',w:.35},{r:5,q:'maj',w:.9},{r:7,q:'maj',w:.95},{r:9,q:'min',w:.7}];
+const MIN_C=[{r:0,q:'min',w:1},{r:5,q:'min',w:.85},{r:7,q:'maj',w:.8},{r:3,q:'maj',w:.7},{r:8,q:'maj',w:.75},{r:10,q:'maj',w:.7},{r:7,q:'min',w:.35}];
+const IVL={maj:[0,4,7],min:[0,3,7],maj7:[0,4,7,11],dom7:[0,4,7,10],min7:[0,3,7,10]};
+const SUF={maj:'',min:'m',maj7:'maj7',dom7:'7',min7:'m7'};
+function harmonize(notes,segs,segLen,tonic,mode){
+  const C=mode==='major'?MAJ_C:MIN_C;
+  const em=[];
+  for(let s=0;s<segs;s++){
+    const a=s*segLen,b=a+segLen;const row=[];
+    const inSeg=notes.filter(n=>n.s<b-1e-6&&n.s+n.d>a+1e-6);
+    let totw=0;
+    for(const c of C){
+      const root=(tonic+c.r)%12;const pcs=IVL[c.q].map(x=>(root+x)%12);
+      let sc=0;totw=0;
+      for(const n of inSeg){
+        const ov=Math.min(b,n.s+n.d)-Math.max(a,n.s);
+        let w=ov*(Math.abs(n.s-a)<1e-6?1.6:(n.s%1<1e-6?1.15:0.8));totw+=w;
+        const pc=n.p%12;
+        if(pc===root)sc+=2.2*w;else if(pcs.includes(pc))sc+=1.8*w;else sc-=1.0*w;
+      }
+      row.push((totw?sc/totw:0)+c.w*0.9);
+    }
+    em.push({row,empty:!inSeg.length});
+  }
+  const trans=(i,j)=>{const a=C[i],b=C[j];let v=0;if(i===j)v-=0.15;
+    if(a.r===7&&b.r===0)v+=0.6;if(a.r===5&&b.r===7)v+=0.3;if(a.r===2&&b.r===7)v+=0.4;if(a.r===9&&(b.r===5||b.r===2))v+=0.2;if(a.r===8&&b.r===10)v+=0.3;if(a.r===10&&b.r===0)v+=0.3;if(a.r===3&&b.r===8)v+=0.2;return v;};
+  const K=C.length;let dp=[],bk=[];
+  for(let s=0;s<segs;s++){
+    dp[s]=[];bk[s]=[];
+    for(let j=0;j<K;j++){
+      let e=em[s].row[j];
+      if(em[s].empty)e=C[j].r===0?1.2:0.2;
+      if(s===0&&C[j].r===0)e+=0.8;
+      if(s===segs-1&&C[j].r===0&&C[j].q===(mode==='major'?'maj':'min'))e+=2.5;
+      if(s===0){dp[s][j]=e;bk[s][j]=-1;continue;}
+      let best=-1e9,bi=0;for(let i=0;i<K;i++){const v=dp[s-1][i]+trans(i,j);if(v>best){best=v;bi=i}}
+      dp[s][j]=best+e;bk[s][j]=bi;
+    }
+  }
+  let j=0,best=-1e9;for(let i=0;i<K;i++)if(dp[segs-1][i]>best){best=dp[segs-1][i];j=i}
+  const path=new Array(segs);for(let s=segs-1;s>=0;s--){path[s]=j;j=bk[s][j]}
+  return path.map(i=>({root:(tonic+C[i].r)%12,q:C[i].q,deg:C[i].r}));
+}
+function chordQuality(ch,sev){
+  if(!sev)return ch.q;
+  if(sev==='blues')return ch.q==='maj'?'dom7':'min7';
+  if(ch.q==='maj')return ch.deg===7?'dom7':'maj7';
+  return 'min7';
+}
+const DRUMS={
+  pop:{36:'x.......x.x.....',38:'....x.......x...',42:'x.x.x.x.x.x.x.x.'},
+  rock:{36:'x.....x.x.......',38:'....x.......x...',42:'x.x.x.x.x.x.x.x.'},
+  edm:{36:'x...x...x...x...',39:'....x.......x...',46:'..x...x...x...x.',42:'x.x.x.x.x.x.x.x.'},
+  hiphop:{36:'x......x..x.....',38:'....x.......x...',42:'x.x.x.x.x.x.x.x.'},
+  lofi:{36:'x......x..x.....',38:'....x.......x...',42:'x.x.x.x.x.x.x.x.'},
+  jazz:{51:'x...x.xx..x.x.xx',44:'....x.......x...',36:'x...............'},
+  shuffle:{36:'x.......x.......',38:'....x.......x...',42:'x.xx.xx.xx.xx.xx'.slice(0,16)},
+  ballad:{36:'x.......x.......',37:'....x.......x...',42:'x...x...x...x...'},
+  folk:{36:'x.......x.......',54:'..x...x...x...x.',45:'......x.........'},
+  cine:{36:'x.......x.......',47:'x.....x...x.x...',45:'............x.x.'},
+  waltz:{36:'x...........',42:'....x...x...'},
+  six8:{36:'x.....x.....',42:'x.xx.xx.xx.x',38:'......x.....'},
+  dembow:{36:'x...x...x...x...',38:'...x..x....x..x.',42:'x.x.x.x.x.x.x.x.'}
+};
+function buildArrangement(state){
+  const {notes:mel0,total,bpb,analysis,genreKey,opts}=state;
+  const g=GENRES[genreKey];const tr=opts.transpose;
+  const mel=mel0.map(n=>({...n,p:n.p+tr}));
+  const tonic=(analysis.key.tonic+tr+120)%12,mode=analysis.key.mode;
+  let tempo=state.tempo;if(opts.fitTempo){const tr2=opts.trend&&TRENDS[genreKey]?TRENDS[genreKey].sweet:g.t;tempo=clamp(tempo,tr2[0],tr2[1]);}
+  const barsPer=Math.max(1,Math.ceil(total/bpb-1e-6));
+  const segLen=opts.chordRate===2&&bpb%2===0?bpb/2:bpb;
+  const segs=Math.round(barsPer*bpb/segLen);
+  const chords=harmonize(mel,segs,segLen,tonic,mode);
+  const passBeats=barsPer*bpb;const passSec=passBeats*60/tempo;
+  let reps=opts.reps||clamp(Math.ceil(20/passSec),1,4);
+  const swing=opts.swing||(g.swing&&opts.swingAuto);
+  const intro=opts.intro?bpb:0;
+  const sw=b=>{if(!swing)return b;const fl=Math.floor(b+1e-9),f=b-fl;if(Math.abs(f-0.5)<1e-6)return fl+2/3;return b;};
+  const T={mel:[],ch:[],bass:[],pad:[],dr:[],markers:[]};
+  const flats=usesFlats(tonic,mode);
+  const vt=(ch)=>{const q=chordQuality(ch,g.sev);let root=48+ch.root;if(root>54)root-=12;
+    let ns=IVL[q].map(x=>root+x);if(g.power)ns=[root,root+7,root+12];return {ns,q,name:pcName(ch.root,flats)+(g.power?'5':SUF[q])};};
+  const chordAt=(i)=>chords[i];
+  // comp generator per segment
+  function comp(style,start,len,ch,next,full){
+    const v=vt(ch);const out=[];const bs=[];
+    const P=(off,d,vel=80,arr=v.ns)=>{if(off<len-1e-6)arr.forEach((p,k)=>out.push({p,s:start+sw(off),d:Math.min(d,len-off),v:vel}));};
+    switch(style){
+      case 'block':P(0,len,72);break;
+      case 'pop':for(let b=0;b<len;b++)P(b,b%2?0.45:0.9,b%2?62:78);if(full)P(len-0.5,0.4,60);break;
+      case 'power':for(let b=0;b<len;b+=0.5)P(b,0.45,b%1?82:96);break;
+      case 'jazz':P(0,0.9,70);P(1.5,0.4,62);if(len>2)P(2.5,0.9,64);break;
+      case 'strum':{const pat=[[0,1,84],[1,0.45,64],[1.5,0.45,70],[2.5,0.45,66],[3,0.45,72],[3.5,0.45,62]];pat.forEach(([o,d,vel])=>{if(o<len)v.ns.forEach((p,k)=>out.push({p,s:start+sw(o)+k*0.02,d:Math.min(d,len-o),v:vel}))});break;}
+      case 'offbeat':for(let b=0.5;b<len;b+=1)P(b,0.35,82);break;
+      case 'waltz':for(let b=1;b<len;b++)P(b,0.6,62);break;
+      default:P(0,len,70);
+    }
+    return out;
+  }
+  function bassLine(style,start,len,ch,next){
+    let r=36+ch.root;if(r>43)r-=12;const q=chordQuality(ch,g.sev);const iv=IVL[q];
+    const out=[];const B=(o,d,p,vel=96)=>{if(o<len-1e-6)out.push({p,s:start+sw(o),d:Math.min(d,len-o),v:vel});};
+    switch(style){
+      case 'root':B(0,len>2?len/2:len,r);if(len>2)B(len/2,len/2,r,86);break;
+      case 'root1':B(0,len,r);break;
+      case 'root8':for(let b=0;b<len;b+=0.5)B(b,0.45,r,b%1?84:98);break;
+      case 'root5':B(0,1,r);if(len>2)B(2,1,r+7,86);else if(len>1)B(len-1,1,r+7,86);break;
+      case 'pop':B(0,1.4,r);B(1.5,0.5,r,80);if(len>2){B(2,1,r,90);B(3,0.5,r+7,80);B(3.5,0.5,r+12,76);}break;
+      case 'sub':B(0,1.6,r,100);if(len>2)B(2.5,1,r,90);break;
+      case 'walk':{let nr=next?36+next.root:r;if(nr>43)nr-=12;const seq=[r,r+iv[1],r+iv[2],nr+((nr>r)?-1:1)];for(let b=0;b<len;b++)B(b,0.9,b===len-1?seq[3]:seq[Math.min(b,2)],b?82:96);break;}
+      default:B(0,len,r);
+    }
+    return out;
+  }
+  function drumsBar(start,bpbL,variant){
+    if(!g.dr)return [];
+    let pat=DRUMS[g.dr];if(bpbL===3&&state.metre==='6/8')pat=DRUMS.six8;
+    const steps=bpbL*4;const out=[];
+    for(const k in pat){const s=pat[k];for(let i=0;i<steps;i++){const c=s[i%s.length];if(c!=='x')continue;
+      const note=+k;if(variant==='light'&&(note===38||note===39||note===37||note===47||note===54))continue;
+      let vel=note===36?108:note===38||note===39?100:note===42||note===44?(i%4===0?78:58):note===46?70:note===51?(i%4===0?80:64):86;
+      if(variant==='light')vel=Math.round(vel*0.75);
+      out.push({p:note,s:start+sw(i/4),d:0.25,v:vel});}}
+    return out;
+  }
+  let t0=0;
+  // intro
+  if(intro){
+    const ch={root:tonic,q:mode==='major'?'maj':'min',deg:0};
+    T.ch.push(...comp(g.ch[2],0,bpb,ch,chords[0],false));
+    T.bass.push(...bassLine(g.bass[2],0,bpb,ch,chords[0]));
+    T.dr.push(...drumsBar(0,bpb,'light'));
+    T.markers.push({s:0,text:'Intro '+vt(ch).name});
+    t0=intro;
+  }
+  for(let r=0;r<reps;r++){
+    const base=t0+r*passBeats;const full=r>0||reps===1;
+    for(const n of mel)T.mel.push({p:n.p,s:base+n.s,d:n.d*0.97,v:Math.round(92+8*(n.s%bpb===0))});
+    for(let s=0;s<segs;s++){
+      const st=base+s*segLen;const ch=chords[s];const nx=chords[s+1]||chords[0];
+      T.ch.push(...comp(g.ch[2],st,segLen,ch,nx,full));
+      T.bass.push(...bassLine(g.bass[2],st,segLen,ch,nx));
+      if(g.pad&&full){const v=vt(ch);v.ns.forEach(p=>T.pad.push({p:p+12,s:st,d:segLen,v:54}));}
+      if(r===0)T.markers.push({s:st,text:vt(ch).name});
+    }
+    for(let b=0;b<barsPer;b++)T.dr.push(...drumsBar(base+b*bpb,bpb,full?'full':'light'));
+    if(g.dr&&r>0)T.dr.push({p:49,s:base,d:1,v:92});
+  }
+  // ending
+  const endS=t0+reps*passBeats;
+  const endCh={root:tonic,q:mode==='major'?'maj':'min',deg:0};const ev=vt(endCh);
+  ev.ns.forEach(p=>T.ch.push({p,s:endS,d:bpb,v:74}));
+  let er=36+tonic;if(er>43)er-=12;T.bass.push({p:er,s:endS,d:bpb,v:96});
+  T.mel.push({p:mel[mel.length-1].p%12+60+(mel[mel.length-1].p>=72?12:0),s:endS,d:bpb,v:0}); // silent placeholder removed below
+  T.mel.pop();
+  if(g.dr){T.dr.push({p:49,s:endS,d:2,v:100});T.dr.push({p:36,s:endS,d:0.25,v:110});}
+  if(g.pad)ev.ns.forEach(p=>T.pad.push({p:p+12,s:endS,d:bpb,v:50}));
+  T.markers.push({s:endS,text:'Outro '+ev.name});
+  const totalBeats=endS+bpb;
+  const chordNames=chords.map(c=>vt(c).name);
+  return {T,tempo,totalBeats,chordNames,tonic,mode,reps,swing,g,genreKey,segLen,bpb,flats,passBeats,intro};
+}
+
+/* ================= MIDI writer ================= */
+function vlq(n){const b=[n&0x7f];while(n>>=7)b.unshift((n&0x7f)|0x80);return b;}
+function strBytes(s){return Array.from(new TextEncoder().encode(s));}
+function trackChunk(evs){
+  evs.sort((a,b)=>a.t-b.t||a.o-b.o);
+  const out=[];let last=0;
+  for(const e of evs){out.push(...vlq(Math.max(0,e.t-last)),...e.b);last=e.t;}
+  out.push(0,0xff,0x2f,0);
+  const len=out.length;return [0x4d,0x54,0x72,0x6b,(len>>>24)&255,(len>>>16)&255,(len>>>8)&255,len&255,...out];
+}
+function keySigSf(tonic,mode){const maj=mode==='major'?tonic:(tonic+3)%12;const map={0:0,7:1,2:2,9:3,4:4,11:5,6:6,1:-5,8:-4,3:-3,10:-2,5:-1};return map[maj];}
+function buildMidi(arr,metre){
+  const PPQ=480;const tk=b=>Math.round(b*PPQ);
+  const [nn,dd]=metre.split('/').map(Number);
+  const tracks=[];
+  const mpq=Math.round(60000000/arr.tempo);
+  const sf=keySigSf(arr.tonic,arr.mode);
+  const meta=[{t:0,o:0,b:[0xff,0x03,...vlq(strBytes('NOTY-MUZYKA Conductor').length),...strBytes('NOTY-MUZYKA Conductor')]},
+    {t:0,o:0,b:[0xff,0x51,3,(mpq>>16)&255,(mpq>>8)&255,mpq&255]},
+    {t:0,o:0,b:[0xff,0x58,4,nn,Math.log2(dd),dd===8?36:24,8]},
+    {t:0,o:0,b:[0xff,0x59,2,sf&255,arr.mode==='minor'?1:0]}];
+  arr.T.markers.forEach(m=>{const s=strBytes(m.text);meta.push({t:tk(m.s),o:0,b:[0xff,0x06,...vlq(s.length),...s]})});
+  tracks.push(trackChunk(meta));
+  const defs=[['Melody',arr.T.mel,0,arr.g.mel[1]],['Chords',arr.T.ch,1,arr.g.ch[1]],['Bass',arr.T.bass,2,arr.g.bass[1]],['Pad',arr.T.pad,3,arr.g.pad?arr.g.pad[1]:89],['Drums',arr.T.dr,9,0]];
+  for(const [name,evs,ch,prog] of defs){
+    if(!evs.length)continue;
+    const nb=strBytes(name);const e=[{t:0,o:0,b:[0xff,0x03,...vlq(nb.length),...nb]}];
+    if(ch!==9)e.push({t:0,o:1,b:[0xc0|ch,prog&127]});
+    e.push({t:0,o:1,b:[0xb0|ch,7,ch===9?100:(ch===3?80:100)]});
+    for(const n of evs){const s=tk(n.s),d=Math.max(1,tk(n.d)-(ch===9?0:4));
+      e.push({t:s,o:3,b:[0x90|ch,n.p&127,clamp(n.v,1,127)]});e.push({t:s+d,o:2,b:[0x80|ch,n.p&127,0]});}
+    tracks.push(trackChunk(e));
+  }
+  const hdr=[0x4d,0x54,0x68,0x64,0,0,0,6,0,1,0,tracks.length,(PPQ>>8)&255,PPQ&255];
+  return new Uint8Array([...hdr,...tracks.flat()]);
+}
+
+/* ================= MIDI reader ================= */
+function readMidi(buf){
+  const d=new DataView(buf);let p=0;
+  const str=n=>{let s='';for(let i=0;i<n;i++)s+=String.fromCharCode(d.getUint8(p+i));return s;};
+  if(str(4)!=='MThd')throw new Error('Це не MIDI-файл');
+  const hl=d.getUint32(p+4);const ntr=d.getUint16(p+10);const div=d.getUint16(p+12);p+=8+hl;
+  if(div&0x8000)throw new Error('SMPTE-формат MIDI не підтримується');
+  let tempo=null,ts=null;const tracks=[];
+  for(let ti=0;ti<ntr&&p<d.byteLength;ti++){
+    if(str(4)!=='MTrk'){break;}
+    const len=d.getUint32(p+4);p+=8;const end=p+len;let tick=0,rs=0;const on={};const notes=[];let name='';
+    const rv=()=>{let v=0,b;do{b=d.getUint8(p++);v=(v<<7)|(b&0x7f)}while(b&0x80);return v;};
+    while(p<end){
+      tick+=rv();let st=d.getUint8(p);
+      if(st<0x80){st=rs}else{p++;if(st<0xf0)rs=st;}
+      if(st===0xff){const ty=d.getUint8(p++);const l=rv();
+        if(ty===0x51&&tempo===null)tempo=60000000/((d.getUint8(p)<<16)|(d.getUint8(p+1)<<8)|d.getUint8(p+2));
+        if(ty===0x58&&ts===null)ts=[d.getUint8(p),2**d.getUint8(p+1)];
+        if(ty===0x03){name=str(l);}
+        p+=l;}
+      else if(st===0xf0||st===0xf7){p+=rv();}
+      else{const hi=st&0xf0,ch=st&15;const a=d.getUint8(p++);const b=(hi===0xc0||hi===0xd0)?0:d.getUint8(p++);
+        if(hi===0x90&&b>0){(on[ch*128+a]=on[ch*128+a]||[]).push(tick);}
+        else if(hi===0x80||(hi===0x90&&b===0)){const k=ch*128+a;if(on[k]&&on[k].length){const s=on[k].shift();if(ch!==9)notes.push({p:a,s:s/div,d:(tick-s)/div,ch});}}}
+    }
+    p=end;
+    if(notes.length)tracks.push({name:name||('Доріжка '+(ti+1)),notes});
+  }
+  return {tempo,ts,tracks};
+}
+function melodyFromTrack(notes){
+  const q=x=>Math.round(x*4)/4;
+  const by={};notes.forEach(n=>{const s=q(n.s);if(!by[s]||n.p>by[s].p)by[s]={p:n.p,s,d:Math.max(0.25,q(n.d))};});
+  const arr=Object.values(by).sort((a,b)=>a.s-b.s);
+  for(let i=0;i<arr.length-1;i++)arr[i].d=Math.min(arr[i].d,arr[i+1].s-arr[i].s);
+  const off=arr.length?Math.floor(arr[0].s):0;arr.forEach(n=>n.s-=off);
+  return arr.slice(0,400);
+}
+
+/* ================= synth ================= */
+function mtof(m){return 440*2**((m-69)/12);}
+function makeNoise(ctx){const b=ctx.createBuffer(1,ctx.sampleRate*1.5,ctx.sampleRate);const c=b.getChannelData(0);for(let i=0;i<c.length;i++)c[i]=Math.random()*2-1;return b;}
+function makeIR(ctx,sec){const len=ctx.sampleRate*sec;const b=ctx.createBuffer(2,len,ctx.sampleRate);for(let ch=0;ch<2;ch++){const c=b.getChannelData(ch);for(let i=0;i<len;i++)c[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);}return b;}
+function voice(ctx,out,type,midi,t,dur,vel){
+  const f=mtof(midi),v=(vel/127);const g=ctx.createGain();g.connect(out);
+  const osc=(tp,fr,det=0)=>{const o=ctx.createOscillator();o.type=tp;o.frequency.value=fr;o.detune.value=det;return o;};
+  const lp=(fr,q=0.7)=>{const fl=ctx.createBiquadFilter();fl.type='lowpass';fl.frequency.value=fr;fl.Q.value=q;return fl;};
+  let srcs=[],end=t+dur;
+  const adsr=(a,dc,s,r,peak)=>{g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+a);g.gain.setTargetAtTime(peak*s,t+a,dc/3);g.gain.setValueAtTime(peak*s,Math.max(t+a,end));g.gain.setTargetAtTime(0,Math.max(t+a,end),r/4);end+=r*0.8;};
+  const decay=(peak,len)=>{g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+0.006);g.gain.setTargetAtTime(0,t+0.006,len/4);const rel=Math.min(t+dur,t+len);g.gain.setTargetAtTime(0,rel,0.05);end=Math.min(t+len,t+dur+0.22);};
+  switch(type){
+    case 'piano':{const a=osc('triangle',f),b=osc('sine',f*2);const gb=ctx.createGain();gb.gain.setValueAtTime(0.3,t);gb.gain.setTargetAtTime(0.02,t,0.12);b.connect(gb).connect(g);a.connect(g);srcs=[a,b];decay(0.42*v,Math.max(0.6,2.4-midi/45));break;}
+    case 'epiano':{const car=osc('sine',f),mod=osc('sine',f);const mg=ctx.createGain();mg.gain.setValueAtTime(f*1.6,t);mg.gain.setTargetAtTime(f*0.2,t,0.15);mod.connect(mg).connect(car.frequency);car.connect(g);srcs=[car,mod];decay(0.38*v,2.2);break;}
+    case 'bell':{const car=osc('sine',f),mod=osc('sine',f*3.5);const mg=ctx.createGain();mg.gain.setValueAtTime(f*2,t);mg.gain.setTargetAtTime(0,t,0.4);mod.connect(mg).connect(car.frequency);car.connect(g);srcs=[car,mod];decay(0.32*v,3);break;}
+    case 'strings':case 'violin':case 'horn':{const fl=lp(type==='horn'?1300:type==='violin'?3800:2200);const a=osc('sawtooth',f,-7),b=osc('sawtooth',f,7);a.connect(fl);b.connect(fl);fl.connect(g);srcs=[a,b];
+      if(type!=='strings'){const l=osc('sine',5.5);const lg=ctx.createGain();lg.gain.value=f*0.006;l.connect(lg);lg.connect(a.frequency);lg.connect(b.frequency);srcs.push(l);}
+      adsr(type==='horn'?0.09:type==='violin'?0.07:0.22,0.3,0.85,0.35,(type==='strings'?0.12:0.17)*v);break;}
+    case 'pad':{const fl=lp(1100);[-12,0,12].forEach(dt=>{const o=osc('sawtooth',f,dt);o.connect(fl);srcs.push(o)});fl.connect(g);adsr(0.6,0.5,0.9,1.0,0.08*v);break;}
+    case 'saw':{const fl=lp(3200,1.5);const a=osc('sawtooth',f,-10),b=osc('sawtooth',f,10),c=osc('square',f/2);const gc=ctx.createGain();gc.gain.value=0.3;a.connect(fl);b.connect(fl);c.connect(gc).connect(fl);fl.connect(g);srcs=[a,b,c];adsr(0.01,0.2,0.75,0.15,0.13*v);break;}
+    case 'pluck':case 'guitar':{const a=osc('sawtooth',f),b=osc('triangle',f,4);const fl=ctx.createBiquadFilter();fl.type='lowpass';fl.frequency.setValueAtTime(type==='guitar'?3500:5000,t);fl.frequency.setTargetAtTime(400,t,type==='guitar'?0.25:0.12);a.connect(fl);b.connect(fl);fl.connect(g);srcs=[a,b];decay(0.28*v,type==='guitar'?1.6:0.8);break;}
+    case 'dist':{const a=osc('sawtooth',f,-6),b=osc('sawtooth',f*1.0,6);const ws=ctx.createWaveShaper();const cv=new Float32Array(1024);for(let i=0;i<1024;i++){const x=i/512-1;cv[i]=Math.tanh(x*6)}ws.curve=cv;const pre=ctx.createGain();pre.gain.value=0.8;const fl=lp(2800);a.connect(pre);b.connect(pre);pre.connect(ws).connect(fl).connect(g);srcs=[a,b];adsr(0.005,0.3,0.8,0.12,0.09*v);break;}
+    case 'sax':{const a=osc('sawtooth',f);const fl=lp(1700,2);const l=osc('sine',5);const lg=ctx.createGain();lg.gain.value=f*0.008;l.connect(lg).connect(a.frequency);a.connect(fl).connect(g);srcs=[a,l];adsr(0.05,0.2,0.8,0.12,0.17*v);break;}
+    case 'flute':{const a=osc('sine',f),b=osc('triangle',f*2);const gb=ctx.createGain();gb.gain.value=0.12;b.connect(gb).connect(g);const l=osc('sine',5.2);const lg=ctx.createGain();lg.gain.value=f*0.007;l.connect(lg);lg.connect(a.frequency);a.connect(g);srcs=[a,b,l];adsr(0.07,0.2,0.85,0.12,0.3*v);break;}
+    case 'organ':{[1,2,3,4].forEach((h,i)=>{const o=osc('sine',f*h);const og=ctx.createGain();og.gain.value=[1,.6,.35,.2][i];o.connect(og).connect(g);srcs.push(o)});adsr(0.01,0.1,1,0.08,0.09*v);break;}
+    case 'bass':{const a=osc('triangle',f),b=osc('sawtooth',f);const gb=ctx.createGain();gb.gain.value=0.08;a.connect(g);b.connect(gb).connect(g);srcs=[a,b];adsr(0.005,0.25,0.7,0.08,0.45*v);break;}
+    case 'acbass':{const a=osc('triangle',f),b=osc('sine',f*2);const gb=ctx.createGain();gb.gain.value=0.15;a.connect(g);b.connect(gb).connect(g);srcs=[a,b];decay(0.55*v,1.4);break;}
+    case 'subbass':{const a=osc('sine',f),b=osc('triangle',f*2);const gb=ctx.createGain();gb.gain.value=0.12;a.connect(g);b.connect(gb).connect(g);srcs=[a,b];adsr(0.005,0.3,0.85,0.08,0.55*v);break;}
+    default:{const a=osc('triangle',f);a.connect(g);srcs=[a];adsr(0.01,0.2,0.7,0.1,0.3*v);}
+  }
+  srcs.forEach(s=>{s.start(t);s.stop(end+0.05)});
+}
+function drum(ctx,out,noise,note,t,vel){
+  const v=vel/127;const g=out;
+  ctx._fl=ctx._fl||{};
+  const shared=(fType,fr,q)=>{const k=fType+fr+'_'+q;if(!ctx._fl[k]){const fl=ctx.createBiquadFilter();fl.type=fType;fl.frequency.value=fr;fl.Q.value=q;fl.connect(out);ctx._fl[k]=fl;}return ctx._fl[k];};
+  const nz=(fType,fr,len,peak,q=1)=>{const s=ctx.createBufferSource();s.buffer=noise;s.loop=true;s.loopStart=Math.random()*0.5;const gg=ctx.createGain();gg.gain.setValueAtTime(peak*v,t);gg.gain.exponentialRampToValueAtTime(0.001,t+len);s.connect(gg).connect(shared(fType,fr,q));s.start(t,Math.random()*1.0);s.stop(t+len+0.02);};
+  const tone=(f1,f2,len,peak,tp='sine')=>{const o=ctx.createOscillator();o.type=tp;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(f2,t+len*0.6);const gg=ctx.createGain();gg.gain.setValueAtTime(peak*v,t);gg.gain.exponentialRampToValueAtTime(0.001,t+len);o.connect(gg).connect(g);o.start(t);o.stop(t+len+0.02);};
+  switch(note){
+    case 36:tone(150,45,0.35,1.0);break;
+    case 38:nz('bandpass',1800,0.18,0.55,0.8);tone(200,160,0.1,0.35,'triangle');break;
+    case 37:tone(900,800,0.05,0.3,'square');nz('highpass',3000,0.04,0.2);break;
+    case 39:[0,0.012,0.024].forEach(o=>{const s=ctx.createBufferSource();s.buffer=noise;const fl=ctx.createBiquadFilter();fl.type='bandpass';fl.frequency.value=1500;const gg=ctx.createGain();gg.gain.setValueAtTime(0.5*v,t+o);gg.gain.exponentialRampToValueAtTime(0.001,t+o+(o===0.024?0.2:0.02));s.connect(fl).connect(gg).connect(g);s.start(t+o);s.stop(t+o+0.25)});break;
+    case 42:case 44:nz('highpass',7500,0.05,0.25);break;
+    case 46:nz('highpass',7000,0.3,0.22);break;
+    case 51:nz('bandpass',6000,0.45,0.16,2);tone(3200,3100,0.3,0.03,'square');break;
+    case 49:nz('highpass',4000,1.6,0.3);break;
+    case 54:nz('highpass',6500,0.12,0.25);break;
+    case 45:tone(110,75,0.4,0.7);break;case 47:tone(80,50,0.6,0.9);nz('lowpass',400,0.3,0.3);break;case 50:tone(160,110,0.35,0.6);break;
+    default:nz('highpass',5000,0.08,0.2);
+  }
+}
+const SR=44100;
+async function renderAudio(arr){
+  const spb=60/arr.tempo;const len=arr.totalBeats*spb+2.5;
+  const ctx=new OfflineAudioContext(2,Math.ceil(len*SR),SR);
+  const comp=ctx.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=3;comp.connect(ctx.destination);
+  const master=ctx.createGain();master.gain.value=0.8;master.connect(comp);
+  const rev=ctx.createConvolver();rev.buffer=makeIR(ctx,2.2);const rg=ctx.createGain();rg.gain.value=arr.genreKey==='ambient'||arr.genreKey==='cinematic'?0.45:0.22;rev.connect(rg).connect(master);
+  const bus=(gain,send,pan=0)=>{const gg=ctx.createGain();gg.gain.value=gain;const p=ctx.createStereoPanner();p.pan.value=pan;gg.connect(p).connect(master);const s=ctx.createGain();s.gain.value=send;gg.connect(s).connect(rev);return gg;};
+  const bMel=bus(1.0,0.5,0.05),bCh=bus(0.55,0.5,-0.2),bBass=bus(0.85,0.05),bPad=bus(0.6,0.7,0.2),bDr=bus(0.7,0.12);
+  const g=arr.g,noise=makeNoise(ctx);
+  arr.T.mel.forEach(n=>voice(ctx,bMel,g.mel[0],n.p,n.s*spb,n.d*spb,n.v));
+  arr.T.ch.forEach(n=>voice(ctx,bCh,g.ch[0],n.p,n.s*spb,n.d*spb,n.v));
+  arr.T.bass.forEach(n=>voice(ctx,bBass,g.bass[0],n.p,n.s*spb,n.d*spb,n.v));
+  arr.T.pad.forEach(n=>voice(ctx,bPad,g.pad?g.pad[0]:'pad',n.p,n.s*spb,n.d*spb,n.v));
+  arr.T.dr.forEach(n=>drum(ctx,bDr,noise,n.p,n.s*spb,n.v));
+  return await ctx.startRendering();
+}
+function wavBlob(buf){
+  const nch=buf.numberOfChannels,len=buf.length,sr=buf.sampleRate;const data=new DataView(new ArrayBuffer(44+len*nch*2));
+  const W=(o,s)=>{for(let i=0;i<s.length;i++)data.setUint8(o+i,s.charCodeAt(i))};
+  W(0,'RIFF');data.setUint32(4,36+len*nch*2,true);W(8,'WAVE');W(12,'fmt ');data.setUint32(16,16,true);data.setUint16(20,1,true);data.setUint16(22,nch,true);data.setUint32(24,sr,true);data.setUint32(28,sr*nch*2,true);data.setUint16(32,nch*2,true);data.setUint16(34,16,true);W(36,'data');data.setUint32(40,len*nch*2,true);
+  const chs=[];for(let c=0;c<nch;c++)chs.push(buf.getChannelData(c));let peak=0.0001;chs.forEach(c=>{for(let i=0;i<len;i++){const a=Math.abs(c[i]);if(a>peak)peak=a}});const gain=Math.min(1,0.95/peak);
+  let o=44;for(let i=0;i<len;i++)for(let c=0;c<nch;c++){const s=clamp(chs[c][i]*gain,-1,1);data.setInt16(o,s<0?s*0x8000:s*0x7fff,true);o+=2;}
+  return new Blob([data],{type:'audio/wav'});
+}
+
+/* ================= app state & UI ================= */
+const EX={
+  ode:{n:'F#4/4 F#4 G4 A4 | A4 G4 F#4 E4 | D4 D4 E4 F#4 | F#4/4. E4/8 E4/2 | F#4/4 F#4 G4 A4 | A4 G4 F#4 E4 | D4 D4 E4 F#4 | E4/4. D4/8 D4/2',t:108,m:'4/4'},
+  shchedryk:{n:'Bb4/4 A4/8 Bb4/8 G4/4 | Bb4/4 A4/8 Bb4/8 G4/4 | Bb4/4 A4/8 Bb4/8 G4/4 | Bb4/4 A4/8 Bb4/8 G4/4 | D5/4 C5/8 D5/8 Bb4/4 | D5/4 C5/8 D5/8 Bb4/4 | D5/4 C5/8 D5/8 Bb4/4 | D5/4 C5/8 D5/8 Bb4/4',t:112,m:'3/4'},
+  sad:{n:'A4/4 C5/8 B4/8 A4/4 E4/4 | F4/4. E4/8 D4/2 | D4/4 F4/8 E4/8 D4/4 A3/4 | B3/4. C4/8 E4/2 | A4/4 C5/8 B4/8 A4/4 E5/4 | F5/4. E5/8 D5/4 C5/4 | B4/4 G#4/4 A4/4 B4/4 | A4/1',t:76,m:'4/4'},
+  blues:{n:'C4/8 Eb4/8 F4/8 F#4/8 G4/4 Bb4/8 G4/8 | C5/4 Bb4/8 G4/8 F4/4 Eb4/4 | C4/8 Eb4/8 F4/8 F#4/8 G4/4 Eb4/8 C4/8 | Bb3/4 C4/4. R/8 R/4',t:92,m:'4/4'},
+  twinkle:{n:'до4/4 до соль соль | ля ля соль/2 | фа/4 фа мі мі | ре ре до/2 | соль/4 соль фа фа | мі мі ре/2 | соль/4 соль фа фа | мі мі ре/2',t:100,m:'4/4'}
+};
+const S={notes:[],total:0,analysis:null,genreKey:null,userGenre:false,arr:null,audio:null,audioKey:'',src:null,ctx:null,playStart:0,raf:0,midiTracks:null};
+const bpbOf=m=>m==='4/4'?4:3;
+function opts(){return{trend:$('trend').checked,fitTempo:$('fitTempo').checked,reps:+$('reps').value,chordRate:+$('chordRate').value,transpose:+$('transpose').value,intro:$('intro').checked,swing:$('swing').checked,swingAuto:true};}
+
+function initUI(){
+  const gs=$('genreSel');Object.entries(GENRES).forEach(([k,g])=>{const o=document.createElement('option');o.value=k;o.textContent=g.n;gs.appendChild(o)});
+  const tp=$('transpose');for(let i=-12;i<=12;i++){const o=document.createElement('option');o.value=i;o.textContent=(i>0?'+':'')+i+' пт';if(i===0){o.textContent='без змін';o.selected=true}tp.appendChild(o)}
+  $('notes').value=LS.get('nm_notes','');$('tempo').value=LS.get('nm_tempo','100');$('metre').value=LS.get('nm_metre','4/4');$('gemKey').value=LS.get('nm_gemkey','');
+  if(!$('notes').value.trim())loadExample('ode',false);
+  if(!LS.get('nm_seen',''))openGuide();
+  $('notes').addEventListener('input',debounce(update,350));
+  ['tempo','metre'].forEach(id=>$(id).addEventListener('change',update));
+  $('example').addEventListener('change',e=>{if(e.target.value)loadExample(e.target.value,true);e.target.value='';});
+  $('btnClear').onclick=()=>{$('notes').value='';update();$('notes').focus();};
+  $('btnGo').onclick=async()=>{update();if(!S.arr){toast('Спершу впиши ноти');return;}$('step3').scrollIntoView({behavior:'smooth'});await play();};
+  $('genreSel').addEventListener('change',e=>{S.genreKey=e.target.value;S.userGenre=true;rebuild();markGenreCards();});
+  ['trend','fitTempo','reps','chordRate','transpose','intro','swing'].forEach(id=>$(id).addEventListener('change',rebuild));
+  $('btnPlay').onclick=play;$('btnStop').onclick=stop;
+  $('btnMidi').onclick=downloadMidi;$('btnWav').onclick=downloadWav;
+  $('midiFile').addEventListener('change',onMidiFile);
+  $('btnMidiLabel').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('midiFile').click();}});
+  $('trackSel').addEventListener('change',()=>useTrack(+$('trackSel').value));
+  $('btnPhoto').onclick=()=>{$('photoBox').classList.toggle('hidden');};
+  $('btnAIStudioPrompt').onclick=async()=>{await copyText(PHOTO_PROMPT);toast('Промпт скопійовано: встав його в AI Studio');window.open('https://aistudio.google.com/prompts/new_chat','_blank','noopener');};
+  $('btnRecognize').onclick=recognizePhoto;
+  $('gemKey2').value=$('gemKey').value;$('elKey').value=LS.get('nm_elkey','');
+  $('gemKey2').addEventListener('change',()=>syncKeys('gemKey2'));
+  $('elKey').addEventListener('change',e=>LS.set('nm_elkey',e.target.value.trim()));
+  $('btnVariants').onclick=makeVariants;$('btnLiveTrends').onclick=liveTrends;
+  $('gemKey').addEventListener('change',()=>syncKeys('gemKey'));
+  document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));['suno','eleven','lyria'].forEach(k=>$('tab-'+k).classList.toggle('hidden',k!==b.dataset.tab));});
+  document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{await copyText($(b.dataset.copy).textContent);toast('Скопійовано ✓');});
+  $('btnGuide').onclick=openGuide;$('btnGuideClose').onclick=closeGuide;$('guide').addEventListener('click',e=>{if(e.target.id==='guide')closeGuide();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeGuide();});
+  window.addEventListener('resize',()=>drawRoll());
+  update();
+}
+function openGuide(){$('guide').classList.add('on');}
+function closeGuide(){$('guide').classList.remove('on');LS.set('nm_seen','1');}
+function debounce(f,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f(...a),ms)}}
+function loadExample(k,run){const e=EX[k];$('notes').value=e.n;$('tempo').value=e.t;$('metre').value=e.m;S.userGenre=false;if(run!==false)update();}
+async function copyText(t){try{await navigator.clipboard.writeText(t);}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(_){}ta.remove();}}
+
+function update(){
+  const txt=$('notes').value;LS.set('nm_notes',txt);LS.set('nm_tempo',$('tempo').value);LS.set('nm_metre',$('metre').value);
+  const {notes,errors,total}=parseNotes(txt);
+  $('parseErr').textContent=errors.length?('Не зрозумів: '+errors.slice(0,6).join(', ')+(errors.length>6?' …':'')+'. Перевір написання (приклад: C#4/8, Bb3/2, до/4, R/4).'):'';
+  S.notes=notes;S.total=total;
+  const has=notes.length>=2;
+  $('analysis').classList.toggle('hidden',!has);$('analysisEmpty').classList.toggle('hidden',has);
+  ['btnPlay','btnMidi','btnWav','btnVariants'].forEach(id=>$(id).disabled=!has);
+  if(!has){S.analysis=null;S.arr=null;$('analysisEmpty').textContent=notes.length===1?'Потрібно хоча б дві ноти.':'Тут з’явиться аналіз, щойно ти впишеш ноти.';drawRoll();renderPrompts();return;}
+  const bpb=bpbOf($('metre').value);const tempo=clamp(+$('tempo').value||100,40,220);
+  S.analysis=analyze(notes,total,bpb,tempo);
+  if(!S.userGenre||!GENRES[S.genreKey])S.genreKey=S.analysis.ranked[0].k;
+  renderAnalysis();rebuild();
+}
+function renderAnalysis(){
+  const A=S.analysis,k=A.key;const fl=usesFlats(k.tonic,k.mode);
+  const ua=(fl?UA_FLAT:UA_SHARP)[k.tonic];
+  $('aKey').textContent=ua[0].toUpperCase()+ua.slice(1)+(k.mode==='major'?' мажор':' мінор');
+  $('aKeyD').textContent=pcName(k.tonic,fl)+(k.mode==='major'?' major':' minor')+' · впевненість '+Math.round(clamp(k.r,0,1)*100)+'%'+(k.second&&k.r-k.second.r<0.05?' (близько до '+pcName(k.second.tonic,fl)+(k.second.mode==='major'?' major':' minor')+')':'');
+  $('aMood').textContent=A.mood;
+  $('aTags').innerHTML=A.tags.map(t=>'<span class="tag">'+t+'</span>').join('');
+  const F=A.F;
+  $('aMel').textContent=S.notes.length+' нот · '+Math.ceil(S.total/bpbOf($('metre').value))+' тактів';
+  $('aMelD').textContent='Діапазон '+midiName(F.lo,fl)+'–'+midiName(F.hi,fl)+' ('+F.range+' пт) · поступенний рух '+Math.round(F.step*100)+'% · стрибки '+Math.round(F.leap*100)+'% · енергія '+Math.round(F.energy*100)+'%';
+  const top=A.ranked.slice(0,3).map(r=>GENRES[r.k].n);
+  $('aText').textContent='Мелодія звучить як «'+A.mood.toLowerCase()+'»'+(A.tags.length?(' з ознаками: '+A.tags.slice(0,3).join(', ')):'')+'. Найкраще пасуватимуть жанри: '+top.join(', ')+'.';
+  $('aGenres').innerHTML=A.ranked.slice(0,3).map((r,i)=>'<button type="button" class="gen" data-g="'+r.k+'"><b>'+(i+1)+'. '+GENRES[r.k].n+'</b><div class="bar"><i style="width:'+r.pct+'%"></i></div><small>Відповідність '+r.pct+'% · '+r.why+'</small></button>').join('');
+  document.querySelectorAll('.gen').forEach(b=>b.onclick=()=>{S.genreKey=b.dataset.g;S.userGenre=true;$('genreSel').value=S.genreKey;rebuild();markGenreCards();toast('Жанр: '+GENRES[S.genreKey].n);});
+  markGenreCards();
+}
+function markGenreCards(){document.querySelectorAll('.gen').forEach(b=>b.classList.toggle('sel',b.dataset.g===S.genreKey));$('genreSel').value=S.genreKey||'';}
+function rebuild(){
+  if(!S.analysis){return;}
+  stop();
+  const o=opts();
+  if(GENRES[S.genreKey].swing&&!S._swTouched){/* auto swing via opts.swingAuto */}
+  S.arr=buildArrangement({notes:S.notes,total:S.total,bpb:bpbOf($('metre').value),analysis:S.analysis,genreKey:S.genreKey,opts:o,tempo:clamp(+$('tempo').value||100,40,220),metre:$('metre').value});
+  S.audio=null;
+  const a=S.arr;const secs=a.totalBeats*60/a.tempo;
+  $('chords').innerHTML='<span style="border:none;background:none;color:var(--mut);padding-left:0">Акорди:</span>'+a.chordNames.map(c=>'<span>'+c+'</span>').join('');
+  $('playStatus').textContent=GENRES[a.genreKey].n+' · '+Math.round(a.tempo)+' уд./хв'+(a.tempo!==+$('tempo').value?' (підлаштовано під жанр)':'')+' · '+a.reps+'× мелодія'+(a.swing?' · свінг':'')+' · тривалість '+Math.floor(secs/60)+':'+String(Math.round(secs%60)).padStart(2,'0');
+  const tr=TRENDS[a.genreKey];
+  $('trendInfo').innerHTML=tr?('🔥 <b>Тренд 2026 · '+GENRES[a.genreKey].n+'</b> · популярність '+'★'.repeat(Math.max(1,Math.round(tr.pop*5)))+'<br>'+tr.ua+'<br><small>Трендовий темп: '+tr.sweet[0]+'–'+tr.sweet[1]+' уд./хв'+($('trend').checked?' (застосовано)':' (вимкнено)')+'. Дані: Luminate Midyear Report 2026, чарти стрімінгів. Найсвіжіше дає кнопка «Живі тренди з Google» на кроці 4.</small>'):'';
+  drawRoll();renderPrompts();
+}
+async function ensureAudio(){
+  if(S.audio)return S.audio;
+  $('playStatus').dataset.prev=$('playStatus').textContent;
+  $('playStatus').textContent='⏳ Генерую звук…';
+  const buf=await renderAudio(S.arr);S.audio=buf;
+  $('playStatus').textContent=$('playStatus').dataset.prev;return buf;
+}
+async function play(){
+  if(!S.arr){toast('Спершу впиши ноти');return;}
+  stop();
+  $('btnPlay').disabled=true;
+  try{
+    const buf=await ensureAudio();
+    if(!S.ctx)S.ctx=new (window.AudioContext||window.webkitAudioContext)();
+    if(S.ctx.state==='suspended')await S.ctx.resume();
+    const src=S.ctx.createBufferSource();src.buffer=buf;src.connect(S.ctx.destination);src.start();S.src=src;S.playStart=S.ctx.currentTime;
+    src.onended=()=>{if(S.src===src)stop();};
+    $('btnStop').disabled=false;
+    const tick=()=>{drawRoll((S.ctx.currentTime-S.playStart)*S.arr.tempo/60);S.raf=requestAnimationFrame(tick)};tick();
+  }catch(e){console.error(e);toast('Не вдалося відтворити: '+e.message);}
+  finally{$('btnPlay').disabled=!S.arr;}
+}
+function stop(){
+  if(S.src){try{S.src.onended=null;S.src.stop()}catch(e){}S.src=null;}
+  cancelAnimationFrame(S.raf);$('btnStop').disabled=true;drawRoll();
+}
+function fileBase(){return 'noty-muzyka_'+(S.genreKey||'track')+'_'+Math.round(S.arr.tempo)+'bpm';}
+function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);}
+function downloadMidi(){if(!S.arr)return;const bytes=buildMidi(S.arr,$('metre').value);S.lastMidi=bytes;download(new Blob([bytes],{type:'audio/midi'}),fileBase()+'.mid');toast('MIDI збережено ✓');}
+async function downloadWav(){if(!S.arr)return;$('btnWav').disabled=true;try{const buf=await ensureAudio();const b=wavBlob(buf);S.lastWavSize=b.size;download(b,fileBase()+'.wav');toast('WAV збережено ✓');}catch(e){toast('Помилка: '+e.message)}finally{$('btnWav').disabled=false;}}
+
+function drawRoll(playBeat){
+  const cv=$('roll');const dpr=window.devicePixelRatio||1;const W=cv.clientWidth||1000,H=cv.clientHeight||220;
+  if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
+  const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
+  if(!S.arr){c.fillStyle='#5b6372';c.font='14px sans-serif';c.fillText('Тут буде піано-рол аранжування',16,30);return;}
+  const a=S.arr;const T=a.T;const all=[...T.mel,...T.ch,...T.bass,...T.pad];
+  let lo=Math.min(...all.map(n=>n.p)),hi=Math.max(...all.map(n=>n.p));lo-=2;hi+=2;
+  const drH=T.dr.length?26:0;const nh=(H-drH-8)/(hi-lo+1);const x=b=>8+b/a.totalBeats*(W-16);
+  c.strokeStyle='#1d222b';c.lineWidth=1;for(let b=0;b<=a.totalBeats;b+=a.bpb){c.beginPath();c.moveTo(x(b),0);c.lineTo(x(b),H);c.stroke();}
+  const draw=(arr,col)=>{c.fillStyle=col;arr.forEach(n=>{const y=(hi-n.p)*nh+4;c.fillRect(x(n.s),y,Math.max(1.5,x(n.s+n.d)-x(n.s)-0.5),Math.max(2,nh-1))})};
+  draw(T.pad,'rgba(179,140,255,.35)');draw(T.ch,'rgba(94,196,255,.75)');draw(T.bass,'#5fd38d');draw(T.mel,'#f5b942');
+  c.fillStyle='#ff6b6b';T.dr.forEach(n=>{const lane=n.p===36?2:(n.p===38||n.p===39||n.p===37)?1:0;c.fillRect(x(n.s),H-drH+lane*8,2,6)});
+  if(playBeat!==undefined){c.fillStyle='#fff';c.fillRect(x(playBeat),0,2,H);}
+}
+
+/* ================= prompts ================= */
+function renderPrompts(){
+  if(!S.analysis||!S.arr){['pSuno','pEleven','pLyria'].forEach(id=>$(id).textContent='Спершу впиши ноти на кроці 1.');return;}
+  const P=promptsFor(S.arr);$('pSuno').textContent=P.suno;$('pEleven').textContent=P.eleven;$('pLyria').textContent=P.lyria;
+}
+
+/* ================= MIDI import ================= */
+async function onMidiFile(e){
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const m=readMidi(await f.arrayBuffer());
+    if(!m.tracks.length)throw new Error('У файлі не знайдено нот (окрім барабанів)');
+    S.midiTracks=m.tracks;
+    if(m.tempo)$('tempo').value=Math.round(clamp(m.tempo,40,220));
+    if(m.ts){const s=m.ts[0]+'/'+m.ts[1];if(['4/4','3/4','6/8'].includes(s))$('metre').value=s;}
+    const sel=$('trackSel');sel.innerHTML='';
+    let best=0,bs=-1e9;m.tracks.forEach((t,i)=>{const avg=t.notes.reduce((a,n)=>a+n.p,0)/t.notes.length;const on=new Set(t.notes.map(n=>Math.round(n.s*4))).size;const mono=on/t.notes.length;const sc=avg+30*mono+(/melod|lead|vocal|voice|мелод|голос|соло/i.test(t.name)?100:0)+Math.min(10,t.notes.length/10);if(sc>bs){bs=sc;best=i}
+      const o=document.createElement('option');o.value=i;o.textContent=t.name+' ('+t.notes.length+' нот)';sel.appendChild(o);});
+    sel.value=best;$('trackPick').classList.toggle('hidden',m.tracks.length<2);
+    useTrack(best);
+    $('importStatus').innerHTML='<span class="ok">✓ Імпортовано «'+f.name+'»</span>'+(m.tracks.length>1?' · вибрано доріжку «'+m.tracks[best].name+'». Якщо мелодія не та, вибери іншу доріжку вище.':'');
+  }catch(err){$('importStatus').innerHTML='<span style="color:var(--bad)">Помилка імпорту: '+err.message+'</span>';}
+  e.target.value='';
+}
+function useTrack(i){const mel=melodyFromTrack(S.midiTracks[i].notes);$('notes').value=notesToText(mel,bpbOf($('metre').value));S.userGenre=false;update();}
+
+/* ================= photo (Gemini) ================= */
+const PHOTO_PROMPT=`Read the sheet music in the attached image and transcribe ONLY the melody (the top voice of the first staff), in reading order.
+Output format, nothing else:
+Line 1: TEMPO=<bpm, or 100 if not written> METRE=<4/4, 3/4 or 6/8>
+Line 2: the notes as space-separated tokens <Note><accidental><octave>/<duration>, e.g. C4/4 D#4/8 Bb3/2 G4/4.
+Durations: /1 whole, /2 half, /4 quarter, /8 eighth, /16 sixteenth; add a dot for dotted notes (C4/4.). Rests: R/4. Middle C = C4. Apply the key signature to every note (write the actual sharps/flats). Put | between bars.`;
+async function recognizePhoto(){
+  const key=$('gemKey').value.trim();const f=$('photoFile').files[0];
+  if(!key){$('photoStatus').innerHTML='<span style="color:var(--bad)">Встав Gemini API-ключ або скористайся кнопкою «Скопіювати промпт і відкрити AI Studio».</span>';return;}
+  if(!f){$('photoStatus').innerHTML='<span style="color:var(--bad)">Вибери фото нот.</span>';return;}
+  LS.set('nm_gemkey',key);
+  $('photoStatus').textContent='⏳ Gemini розпізнає ноти…';$('btnRecognize').disabled=true;
+  try{
+    const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(f)});
+    const model=$('gemModel').value.trim()||'gemini-flash-latest';
+    const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:PHOTO_PROMPT},{inline_data:{mime_type:f.type||'image/jpeg',data:b64}}]}]})});
+    const j=await resp.json();
+    if(!resp.ok)throw new Error(j.error&&j.error.message||('HTTP '+resp.status));
+    const text=(j.candidates&&j.candidates[0]&&j.candidates[0].content.parts.map(p=>p.text||'').join('\n'))||'';
+    applyRecognized(text);
+    $('photoStatus').innerHTML='<span class="ok">✓ Готово. Перевір ноти на слух: розпізнавання може помилятися.</span>';
+  }catch(e){$('photoStatus').innerHTML='<span style="color:var(--bad)">Помилка Gemini: '+e.message+'</span>';}
+  finally{$('btnRecognize').disabled=false;}
+}
+function applyRecognized(text){
+  const tm=text.match(/TEMPO\s*=\s*(\d+)/i),mm=text.match(/METRE\s*=\s*(\d\/\d)/i);
+  if(tm)$('tempo').value=clamp(+tm[1],40,220);if(mm&&['4/4','3/4','6/8'].includes(mm[1]))$('metre').value=mm[1];
+  const lines=text.replace(/```[a-z]*/g,'').split('\n').filter(l=>l.trim()&&!/TEMPO\s*=/i.test(l));
+  $('notes').value=lines.join(' ').trim();S.userGenre=false;update();
+}
+
+/* ================= variants (multi-engine) ================= */
+function keyGem(){return ($('gemKey2').value||$('gemKey').value||'').trim();}
+function syncKeys(src){const v=$(src).value.trim();$('gemKey').value=v;$('gemKey2').value=v;LS.set('nm_gemkey',v);}
+function arrFor(genreKey){return buildArrangement({notes:S.notes,total:S.total,bpb:bpbOf($('metre').value),analysis:S.analysis,genreKey,opts:opts(),tempo:clamp(+$('tempo').value||100,40,220),metre:$('metre').value});}
+function promptsFor(a){
+  const A=S.analysis,g=GENRES[a.genreKey],fl=a.flats;const keyEn=pcName(a.tonic,fl)+(a.mode==='major'?' major':' minor');
+  const moods=[A.moodEn,...A.tagsEn.slice(0,3)].join(', ');const bpm=Math.round(a.tempo);const metre=$('metre').value;
+  let trend='';if($('trend').checked&&TRENDS[a.genreKey])trend=TRENDS[a.genreKey].sound;
+  if(S.live&&S.live.genreKey===a.genreKey&&S.live.sound_keywords)trend=S.live.sound_keywords;
+  const noteLine=a.T.mel.slice(0,Math.min(48,S.notes.length)).map(n=>midiName(n.p,fl)).join(' ');
+  const prog=a.chordNames.join(' – ');
+  return {
+    suno:`${g.en}, ${moods}, ${bpm} BPM, ${keyEn}, ${metre} time, ${g.inst}${trend?', '+trend:''}, instrumental, keep the original melody`,
+    eleven:`Instrumental ${g.en} track in ${keyEn}, ${bpm} BPM, ${metre} time. Mood: ${moods}.\nInstrumentation: ${g.inst}.${trend?'\nProduction: '+trend+'.':''}\nLead melody (motif to build the track around): ${noteLine}${S.notes.length>48?' …':''}.\nChord progression: ${prog}.\nStructure: short intro, main theme, theme repeated with a fuller arrangement, gentle outro resolving on ${pcName(a.tonic,fl)}. No vocals.`,
+    lyria:`${A.moodEn[0].toUpperCase()+A.moodEn.slice(1)} ${g.en} instrumental in ${keyEn} at ${bpm} BPM (${metre}). ${g.inst[0].toUpperCase()+g.inst.slice(1)}.${trend?' Production: '+trend+'.':''} Mood: ${moods}. Harmony follows ${prog}. Lead melody motif: ${noteLine}. Intro – theme – fuller repeat – outro. About one minute long. No vocals.`
+  };
+}
+function pickVariants(){
+  const r=S.analysis.ranked;const top=r.slice(0,3).map(x=>x.k);
+  let best=null,bs=-1;r.forEach(x=>{const t=TRENDS[x.k];if(!t||top.includes(x.k)||t.pop<0.7)return;const sc=x.v*(0.5+t.pop);if(sc>bs){bs=sc;best=x.k}});
+  const list=top.map((k,i)=>({id:'own'+i,src:'own',genreKey:k,label:String.fromCharCode(65+i)+'. '+GENRES[k].n,sub:'Власне аранжування · відповідність '+r[i].pct+'%'}));
+  if(best)list.push({id:'own3',src:'own',genreKey:best,label:'D. 🔥 Тренд: '+GENRES[best].n,sub:'Власне аранжування в одному з найпопулярніших жанрів 2026 року, який пасує до мелодії'});
+  return list;
+}
+function card(v){
+  const d=document.createElement('div');d.className='gen';d.style.cursor='default';d.id='var-'+v.id;
+  d.innerHTML='<b>'+v.label+'</b><small style="margin:4px 0 8px">'+v.sub+'</small><div class="vbody"><div class="status">⏳ Чекає…</div></div>';
+  $('variants').appendChild(d);return d.querySelector('.vbody');
+}
+function audioBlock(body,blob,ext,name,extraBtns){
+  const url=URL.createObjectURL(blob);
+  body.innerHTML='<audio controls preload="metadata" style="width:100%" src="'+url+'"></audio><div class="row" style="margin-top:6px"></div>';
+  const row=body.querySelector('.row');
+  const b=document.createElement('button');b.type='button';b.textContent='⬇ '+ext.toUpperCase();b.onclick=()=>download(blob,name+'.'+ext);row.appendChild(b);
+  (extraBtns||[]).forEach(x=>row.appendChild(x));
+}
+async function makeVariants(){
+  if(!S.analysis){toast('Спершу впиши ноти');return;}
+  stop();
+  $('btnVariants').disabled=true;$('variants').innerHTML='';
+  const list=pickVariants();
+  const bodies={};
+  list.forEach(v=>bodies[v.id]=card(v));
+  const base=arrFor(list[0].genreKey);const P=promptsFor(base);
+  const gk=keyGem(),ek=$('elKey').value.trim();
+  const bL=card({id:'lyria',label:'E. Google Lyria',sub:'Генерація Google AI за аналізом твоїх нот ('+GENRES[base.genreKey].n+')'});
+  const bE=card({id:'eleven',label:'F. ElevenLabs Music',sub:'Генерація ElevenLabs за аналізом твоїх нот ('+GENRES[base.genreKey].n+')'});
+  const bS=card({id:'suno',label:'G. Suno (cover твоєї мелодії)',sub:'Найкраще зберігає мелодію: Suno отримує WAV варіанту A'});
+  const bU=card({id:'udio',label:'H. Udio',sub:'Альтернативний генератор: завантаж WAV і встав стиль'});
+  $('varStatus').textContent='⏳ Генерую власні аранжування…';
+  // external engines in parallel
+  const ext=[];
+  if(gk)ext.push(runLyria(bL,gk,P.lyria));else bL.innerHTML='<div class="status">Встав Gemini-ключ у розділі «🔑 Ключі» нижче, і трек згенерується автоматично. Без ключа: крок 5, вкладка «Google AI Studio».</div>';
+  if(ek)ext.push(runEleven(bE,ek,P.eleven));else bE.innerHTML='<div class="status">Встав ElevenLabs-ключ у розділі «🔑 Ключі» нижче, і трек згенерується автоматично. Без ключа: крок 5, вкладка «ElevenLabs».</div>';
+  let firstWav=null;
+  let vi=0;for(const v of list){vi++;$('varStatus').textContent='⏳ Генерую власне аранжування '+vi+' з '+list.length+'…';
+    const body=bodies[v.id];body.innerHTML='<div class="status">⏳ Генерую звук…</div>';
+    try{
+      const a=arrFor(v.genreKey);const buf=await renderAudio(a);const wav=wavBlob(buf);if(!firstWav)firstWav=wav;
+      const mb=document.createElement('button');mb.type='button';mb.textContent='⬇ MIDI';mb.onclick=()=>download(new Blob([buildMidi(a,$('metre').value)],{type:'audio/midi'}),'noty-muzyka_'+v.genreKey+'.mid');
+      const ub=document.createElement('button');ub.type='button';ub.textContent='Зробити основним';ub.onclick=()=>{S.genreKey=v.genreKey;S.userGenre=true;rebuild();markGenreCards();$('step3').scrollIntoView({behavior:'smooth'});};
+      audioBlock(body,wav,'wav','noty-muzyka_'+v.genreKey+'_'+Math.round(a.tempo)+'bpm',[mb,ub]);
+      body.insertAdjacentHTML('beforeend','<small style="margin-top:6px">'+Math.round(a.tempo)+' уд./хв · акорди: '+a.chordNames.slice(0,8).join(' ')+'</small>');
+    }catch(e){body.innerHTML='<div class="status" style="color:var(--bad)">Помилка: '+e.message+'</div>';}
+  }
+  // Suno / Udio cards
+  const sunoP=P.suno;
+  bS.innerHTML='<div class="prompt" style="font-size:12.5px">'+esc(sunoP)+'</div><div class="row"></div><small>Покроково: ⬇ WAV → suno.com/create → «+ Audio» → Upload WAV → Cover → встав стиль → Create. Або напиши Claude: «зроби варіант Suno» і він зробить це сам у твоєму акаунті.</small>';
+  const sr=bS.querySelector('.row');sr.append(btn('⬇ WAV (A)',()=>download(firstWav,'noty-muzyka_dlya-suno.wav')),btn('📋 Стиль',async()=>{await copyText(sunoP);toast('Скопійовано ✓')}),link('Suno ↗','https://suno.com/create'));
+  bU.innerHTML='<div class="prompt" style="font-size:12.5px">'+esc(sunoP)+'</div><div class="row"></div><small>Покроково: udio.com/create → завантаж аудіо (Upload / Remix) → вибери WAV → встав опис стилю → Create.</small>';
+  const ur=bU.querySelector('.row');ur.append(btn('⬇ WAV (A)',()=>download(firstWav,'noty-muzyka_dlya-udio.wav')),btn('📋 Стиль',async()=>{await copyText(sunoP);toast('Скопійовано ✓')}),link('Udio ↗','https://www.udio.com/create'));
+  $('varStatus').textContent=ext.length?'✓ Власні варіанти готові. Чекаю на AI-сервіси…':'✓ Власні варіанти готові. Додай ключі нижче, щоб отримати ще й треки Lyria та ElevenLabs.';
+  await Promise.allSettled(ext);
+  if(ext.length)$('varStatus').textContent='✓ Усі варіанти готові. Послухай і вибери найкращий.';
+  $('btnVariants').disabled=false;
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function btn(t,f){const b=document.createElement('button');b.type='button';b.textContent=t;b.onclick=f;return b;}
+function link(t,h){const a=document.createElement('a');a.className='btn';a.href=h;a.target='_blank';a.rel='noopener';a.textContent=t;return a;}
+function b64ToBlob(b64,mime){const bin=atob(b64);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:mime});}
+function findAudio(j){
+  if(j.output_audio&&j.output_audio.data)return j.output_audio;
+  const st=j.steps||j.outputs||[];for(const s of st){const c=s.content||(s.type==='audio'?[s]:[]);for(const x of c){if(x.type==='audio'&&x.data)return x;}}
+  return null;
+}
+async function runLyria(body,key,prompt){
+  body.innerHTML='<div class="status">⏳ Lyria генерує трек (до 1–2 хв)…</div>';
+  try{
+    const model=$('lyriaModel').value;const H={'Content-Type':'application/json','x-goog-api-key':key};
+    let r=await fetch('https://generativelanguage.googleapis.com/v1beta/interactions',{method:'POST',headers:H,body:JSON.stringify({model,input:prompt})});
+    let j=await r.json();if(!r.ok)throw new Error(j.error&&j.error.message||('HTTP '+r.status));
+    let tries=0;while(!findAudio(j)&&j.id&&j.status&&/progress|pending|running/i.test(j.status)&&tries<60){await new Promise(s=>setTimeout(s,4000));tries++;r=await fetch('https://generativelanguage.googleapis.com/v1beta/interactions/'+encodeURIComponent(j.id),{headers:H});j=await r.json();if(!r.ok)throw new Error(j.error&&j.error.message||('HTTP '+r.status));}
+    const au=findAudio(j);if(!au)throw new Error('Lyria не повернула аудіо'+(j.status?(' (статус: '+j.status+')'):''));
+    const mime=au.mime_type||au.mimeType||'audio/mpeg';const ext=/wav/.test(mime)?'wav':'mp3';
+    audioBlock(body,b64ToBlob(au.data,mime),ext,'noty-muzyka_lyria');
+  }catch(e){body.innerHTML='<div class="status" style="color:var(--bad)">Lyria: '+esc(e.message)+'</div><small>Якщо йдеться про billing/quota: для Lyria потрібен платний ключ. Можна зробити вручну на кроці 5.</small>';}
+}
+async function runEleven(body,key,prompt){
+  body.innerHTML='<div class="status">⏳ ElevenLabs генерує трек (до 1–2 хв)…</div>';
+  try{
+    const ms=clamp((+$('elLen').value||60)*1000,10000,300000);
+    const r=await fetch('https://api.elevenlabs.io/v1/music?output_format=mp3_44100_128',{method:'POST',headers:{'xi-api-key':key,'Content-Type':'application/json'},body:JSON.stringify({prompt,music_length_ms:ms,model_id:$('elModel').value})});
+    if(!r.ok){let m='HTTP '+r.status;try{const j=await r.json();m=(j.detail&&(j.detail.message||JSON.stringify(j.detail)))||m}catch(_){}throw new Error(m);}
+    audioBlock(body,await r.blob(),'mp3','noty-muzyka_elevenlabs');
+  }catch(e){body.innerHTML='<div class="status" style="color:var(--bad)">ElevenLabs: '+esc(e.message)+'</div><small>Перевір ключ, дозвіл Music і кредити. Можна зробити вручну на кроці 5.</small>';}
+}
+/* live trends via Gemini + Google Search grounding */
+async function liveTrends(){
+  const key=keyGem();const box=$('liveTrendBox');box.classList.remove('hidden');
+  if(!key){box.innerHTML='Встав Gemini API-ключ у розділі «🔑 Ключі» вище: цей запит іде через Gemini з пошуком Google.';$('keysBox').open=true;return;}
+  const gk=S.genreKey||'pop';
+  box.textContent='⏳ Gemini шукає в Google, що зараз найбільше слухають…';$('btnLiveTrends').disabled=true;
+  const q=`Use Google Search. What sounds, production styles and characteristics are most streamed and best received by listeners right now (last 3 months) in the genre "${GENRES[gk].en}"? Return ONLY a JSON object, no markdown:
+{"summary_uk":"3-4 sentences in Ukrainian about what is trending now and why listeners like it","tempo_bpm":[min,max],"sound_keywords":"8-14 short English production keywords, comma separated, NO artist or song names","arrangement_tips_uk":"2 short tips in Ukrainian"}`;
+  try{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent($('gemModel').value.trim()||'gemini-flash-latest')+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:q}]}],tools:[{google_search:{}}]})});
+    const j=await r.json();if(!r.ok)throw new Error(j.error&&j.error.message||('HTTP '+r.status));
+    const c=j.candidates&&j.candidates[0];const txt=(c&&c.content&&c.content.parts||[]).map(p=>p.text||'').join('');
+    const m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error('Не вдалося прочитати відповідь');
+    const o=JSON.parse(m[0]);o.genreKey=gk;S.live=o;
+    if(Array.isArray(o.tempo_bpm)&&o.tempo_bpm.length===2&&TRENDS[gk]){const a=clamp(+o.tempo_bpm[0],50,200),b=clamp(+o.tempo_bpm[1],50,200);if(a<b)TRENDS[gk].sweet=[a,b];}
+    const src=((c.groundingMetadata&&c.groundingMetadata.groundingChunks)||[]).filter(x=>x.web).slice(0,5).map(x=>'<a href="'+esc(x.web.uri)+'" target="_blank" rel="noopener">'+esc(x.web.title||'джерело')+'</a>').join(' · ');
+    box.innerHTML='<b>🔥 Живі тренди: '+GENRES[gk].n+'</b><br>'+esc(o.summary_uk||'')+'<br><b>Темп зараз:</b> '+esc((o.tempo_bpm||[]).join('–'))+' уд./хв<br><b>Саунд:</b> <span class="mono">'+esc(o.sound_keywords||'')+'</span><br><b>Поради:</b> '+esc(o.arrangement_tips_uk||'')+(src?'<br><small>Джерела: '+src+'</small>':'')+'<br><small class="ok">✓ Застосовано до темпу і промптів цього жанру.</small>';
+    rebuild();
+  }catch(e){box.innerHTML='<span style="color:var(--bad)">Помилка: '+esc(e.message)+'</span>';}
+  finally{$('btnLiveTrends').disabled=false;}
+}
+
+window.NM={parseNotes,analyze,buildArrangement,buildMidi,readMidi,S,applyRecognized};
+initUI();
+</script>
+</body>
+</html>
