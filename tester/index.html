@@ -181,6 +181,8 @@ label.f{display:block;margin:12px 0 4px;font-weight:700;color:#f3d77e}
       <li>Коли все правильно, натисніть <b>Згенерувати промпт</b>.</li>
     </ol>
     <p class="hint" id="aiNote"></p>
+    <div class="note hidden" id="aiOffer">Цей аналіз зроблено на телефоні: за словами і будовою фраз, без ШІ. Щоб тестер справді розумів зміст, підключіть безкоштовний ШІ Gemini (один раз, 1 хвилина).
+      <button class="gem flat" id="btnAiSetup">🧠 Підключити ШІ-аналіз</button></div>
     <textarea id="analysis" style="min-height:240px"></textarea>
     <button class="gem amethyst" id="btnPrompt"><span class="sp" style="left:10%;top:24%">✦</span><span class="sp" style="right:12%;top:30%;animation-delay:.8s">✦</span>✨ Згенерувати промпт</button>
   </section>
@@ -237,11 +239,11 @@ label.f{display:block;margin:12px 0 4px;font-weight:700;color:#f3d77e}
   <input id="sMail" type="email" placeholder="name@gmail.com">
   <p class="small">Якщо вписати, лист одразу буде адресований вам. Можна залишити порожнім.</p>
   <label class="f" for="sKey">Розумний аналіз Gemini: ключ (необов'язково)</label>
-  <input id="sKey" placeholder="AIza…" autocomplete="off">
+  <div class="row"><input id="sKey" placeholder="AIza…" autocomplete="off" style="flex:3"><button class="gem flat" id="sPaste" style="margin-top:0;flex:1">📋 Вставити</button></div>
   <ol class="small" style="padding-left:18px;margin:6px 0">
-    <li>Без ключа аналіз робиться прямо на телефоні, за ключовими словами. Це швидко і безкоштовно.</li>
+    <li>Без ключа аналіз робиться прямо на телефоні: за словами і будовою фраз. Працює без інтернету, але зміст розуміє гірше.</li>
     <li>З ключем аналіз робить ШІ Gemini: краще розуміє живу мову, чистить «е-е-е» і повтори.</li>
-    <li>Як отримати ключ: відкрийте <b>aistudio.google.com/apikey</b>, увійдіть у Google, натисніть «Create API key», скопіюйте і вставте сюди.</li>
+    <li>Як отримати ключ: відкрийте <b>aistudio.google.com/apikey</b> і увійдіть у свій Google.</li><li>Натисніть <b>«Create API key»</b>, потім <b>«Copy»</b>.</li><li>Поверніться сюди, натисніть <b>📋 Вставити</b> і <b>«Зберегти налаштування»</b>.</li><li>Це безкоштовно: на тести гри безкоштовних запитів вистачає з великим запасом.</li>
     <li>Ключ зберігається лише на цьому телефоні.</li>
   </ol>
   <button class="gem" id="sSave">✔ Зберегти налаштування</button>
@@ -291,6 +293,7 @@ label.f{display:block;margin:12px 0 4px;font-weight:700;color:#f3d77e}
 
 <div class="toast" id="toast"></div>
 
+<script src="analyzer.js"></script>
 <script>
 (()=>{
 'use strict';
@@ -361,55 +364,12 @@ function renderRec(){
 $('btnRec').onclick=()=>rec.on?stopRec():startRec();
 $('transcript').addEventListener('input',e=>{st.transcript=e.target.value;save();$('count').textContent=countLines()});
 
-/* ---------- аналіз (локальний) ---------- */
-const RX={
-  bug:/баг|глюк|лаг|лагає|лагает|зависа|завис|виліта|вылета|вилетіл|вылетел|краш|crash|bug|не працю|не работа|не спрацьов|не срабатыва|застряг|застрял|застряє|провалив|провалил|крив[аоі] текстур|фпс|fps|гальму|тормоз|фриз|помилк|ошибк|зламал|сломал|чорний екран|черный экран|просіда|проседа/i,
-  dislike:/не подоба|не нрав|не сподоба|погано|плохо|жах|ужас|бісить|бесит|дратує|раздража|нудно|скучно|занадто складн|слишком сложн|незручн|неудобн|криво|відстій|отстой|занадто|слишком|повільн|медленн|не зрозуміл|непонятн|не видно|дивно|странно|некрасив|відстой|hate|annoying|boring/i,
-  idea:/треба|потрібно|нужно|надо|додати|добавить|добавити|зробити|сделать|хочу|хотілось|хотелось|хотів би|хотел бы|краще б|лучше б|краще було б|можна б|можно было|пропоную|предлагаю|змінити|изменить|замінити|заменить|прибрати|убрать|має бути|мало б|должно|повинн|should|add |need/i,
-  like:/подоба|нрав|класн|клас|круто|кльово|клёво|супер|чудов|отличн|гарн|красив|прикольн|зручн|удобн|кайф|вау|топ|сподоба|бомба|шикарн|good|nice|cool|love|awesome|great/i
-};
-const CRIT=/критич|взагалі не|вообще не|неможливо|невозможно|постійно|постоянно|завжди|всегда|виліта|вылета|краш|дуже|очень|жахлив|ужасн|терміново|срочно|!!/i;
-const AREAS=[
-  ['Продуктивність',/лаг|фпс|fps|гальм|тормоз|завис|виліт|вылет|фриз|загрузк|завантаж|просіда|проседа/i],
-  ['Графіка',/графік|графон|текстур|модел|анімац|анимац|світл|освітл|свет|колір|кольор|цвет|ефект|эффект|картинк|візуал|визуал|тіні|тени/i],
-  ['Звук',/звук|музик|музык|гучн|громк|озвуч|голос|саунд/i],
-  ['Керування',/керуван|управлен|кнопк|джойстик|стриб|прыж|біг|бег|рух|движен|чутлив|чувствит|миш|мыш|клавіш|клавиш|прицел|приціл/i],
-  ['Камера',/камер|ракурс|огляд|обзор/i],
-  ['Інтерфейс',/меню|інтерфейс|интерфейс|шрифт|напис|надпис|hud|іконк|иконк|мінікарт|миникарт|карт[аиу]\b|екран|экран/i],
-  ['Баланс',/складн|сложн|легк|баланс|урон|шкод|здоров|хп|hp|ворог|враг|бос|босс|зброя|зброї|оружи|патрон|нагород|награ/i],
-  ['Сюжет',/сюжет|діалог|диалог|квест|місі|мисси|персонаж|історі|истори/i]
-];
-const SECTIONS=[['bug','🐞 БАГИ'],['dislike','👎 НЕ ПОДОБАЄТЬСЯ'],['idea','💡 ІДЕЇ / ПОБАЖАННЯ'],['like','👍 ПОДОБАЄТЬСЯ (не чіпати)'],['other','📝 ІНШЕ / НОТАТКИ']];
-function classify(t){
-  if(RX.bug.test(t))return'bug';
-  if(RX.dislike.test(t))return'dislike';
-  if(RX.idea.test(t))return'idea';
-  if(RX.like.test(t))return'like';
-  return'other';
-}
+/* ---------- аналіз (локальний, analyzer.js) ---------- */
 function headerLine(){
   const d=new Date();
   return '🎮 Гра: '+(st.game||'—')+' · '+d.toLocaleDateString('uk-UA')+' · тривалість тесту: '+fmt(rec.elapsed);
 }
-function analyzeLocal(text){
-  const groups={bug:[],dislike:[],idea:[],like:[],other:[]};
-  text.split('\n').forEach(raw=>{
-    let l=raw.trim(); if(!l)return;
-    let tm=''; const m=l.match(/^\[(\d{1,2}:\d{2})\]\s*/); if(m){tm=m[1];l=l.slice(m[0].length)}
-    l.split(/(?<=[.!?])\s+/).forEach(part=>{
-      part=part.trim().replace(/\s+/g,' '); if(part.length<2)return;
-      const c=classify(part);
-      const area=(AREAS.find(a=>a[1].test(part))||[''])[0];
-      const crit=(c==='bug'||c==='dislike')&&CRIT.test(part);
-      groups[c].push((crit?'❗ ':'')+(area?'['+area+'] ':'')+part+(tm?' ('+tm+')':''));
-    });
-  });
-  // критичні — вгору
-  ['bug','dislike'].forEach(k=>groups[k].sort((a,b)=>(b.startsWith('❗')?1:0)-(a.startsWith('❗')?1:0)));
-  let out=headerLine()+'\n';
-  SECTIONS.forEach(([k,title])=>{out+='\n'+title+' ('+groups[k].length+')\n';groups[k].forEach((it,i)=>out+=(i+1)+'. '+it+'\n');if(!groups[k].length)out+='—\n'});
-  return out.trim();
-}
+function analyzeLocal(text){return window.TesterAnalyzer.analyze(text,{header:headerLine()}).text}
 async function analyzeAI(text){
   const instr=`Ти — аналітик ігрового тестування. Нижче — розшифровка живих голосових коментарів гравця під час гри (може містити помилки розпізнавання, повтори, слова-паразити). Проаналізуй і поверни ЛИШЕ звіт українською у ТОЧНО такому форматі, без markdown і без жодних інших слів:
 
@@ -426,7 +386,7 @@ ${headerLine()}
 📝 ІНШЕ / НОТАТКИ (N)
 1. ...
 
-Правила: ❗ лише для критичного; Область — одна з: Продуктивність, Графіка, Звук, Керування, Камера, Інтерфейс, Баланс, Сюжет (або без неї); об'єднуй повтори; виправляй очевидні помилки розпізнавання; нічого не вигадуй; якщо розділ порожній — пиши «—».
+Правила: розумій зміст, а не окремі слова; одна фраза може містити кілька думок («графіка класна, але камера бісить»): розділяй їх на окремі пункти в різних розділах; враховуй заперечення («не погано» = добре, «не дуже подобається» = погано, «багів немає» = добре); пункти пиши коротко, своїми словами, як завдання розробнику, без слів-паразитів; ❗ лише для критичного; Область — одна з: Продуктивність, Графіка, Звук, Керування, Камера, Інтерфейс, Баланс, Сюжет (або без неї); об'єднуй повтори; виправляй очевидні помилки розпізнавання; нічого не вигадуй; якщо розділ порожній — пиши «—».
 
 РОЗШИФРОВКА:
 ${text}`;
@@ -443,11 +403,11 @@ $('btnAnalyze').onclick=async()=>{
   const text=$('transcript').value.trim();
   if(!text){toast('Спершу скажіть або впишіть хоча б один коментар');return}
   const b=$('btnAnalyze'); b.disabled=true; const old=b.innerHTML; b.textContent='⏳ Аналізую…';
-  let res,how='Аналіз зроблено на телефоні за ключовими словами.';
+  let res,how='Аналіз зроблено на телефоні.';
   if(st.key.trim()){try{res=await analyzeAI(text);how='Аналіз зробив ШІ Gemini.'}catch(e){how='Gemini не відповів ('+e.message+'), тому аналіз зроблено на телефоні.'}}
   if(!res)res=analyzeLocal(text);
   b.disabled=false; b.innerHTML=old;
-  st.analysis=res; $('analysis').value=res; $('aiNote').textContent=how+' Перечитайте й виправте, якщо треба.';
+  st.analysis=res; $('analysis').value=res; $('aiNote').textContent=how+' Перечитайте й виправте, якщо треба.'; $('aiOffer').classList.toggle('hidden',how.startsWith('Аналіз зробив ШІ'));
   setStep(2); save(); renderSteps();
   $('p2').scrollIntoView({behavior:'smooth',block:'start'});
 };
@@ -568,6 +528,8 @@ $('sendTG').onclick=()=>go('https://t.me/share/url?url='+encodeURIComponent('П�
 $('sendMail').onclick=()=>go('mailto:'+encodeURIComponent(st.mail||'')+'?subject='+encodeURIComponent('Промпт ТЕСТЕР'+(st.game?' — '+st.game:''))+'&body='+encodeURIComponent($('prompt').value));
 
 /* ---------- налаштування ---------- */
+$('btnAiSetup').onclick=()=>{$('btnSettings').click();setTimeout(()=>$('sKey').scrollIntoView({behavior:'smooth',block:'center'}),150)};
+$('sPaste').onclick=async()=>{try{const t=(await navigator.clipboard.readText()).trim();if(t){$('sKey').value=t;toast('Ключ вставлено. Натисніть «Зберегти налаштування»')}else toast('Буфер порожній: спершу скопіюйте ключ')}catch(e){toast('Натисніть у поле і вставте ключ вручну')}};
 $('btnSettings').onclick=()=>{$('sGame').value=st.game;$('sLang').value=st.lang;$('sMail').value=st.mail;$('sKey').value=st.key;open('mSettings')};
 $('sSave').onclick=()=>{st.game=$('sGame').value.trim();st.lang=$('sLang').value;st.mail=$('sMail').value.trim();st.key=$('sKey').value.trim();save();close('mSettings');
   if(rec.on){stopRec();startRec()} toast('Налаштування збережено')};
